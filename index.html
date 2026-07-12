@@ -80,7 +80,6 @@ nav{
 }
 .pill:hover{opacity:.85}
 .pill:active{transform:scale(.97)}
-@media(max-width:640px){.nav-links a:not(.pill){display:none}}
 
 /* ── hero ── */
 header{
@@ -662,6 +661,7 @@ var STYLE = {
   titleScale: CFG.text.sx,        // 3D title size
   titleColor: CFG.text.color,
   titleTrack: 0,                  // kept for saved-defaults compat (unused: SVG title)
+  titleScaleM: 1.35,              // extra title scale on mobile (<768), for legibility
   kickerSize: 11,                 // subtitle px
   kickerTrack: 0.22,              // subtitle letter spacing (em)
   calm: Math.max(CFG.cloth.damping, 0.12),  // velocity damping → less jitter
@@ -815,6 +815,11 @@ function resize(){
   cam.position.set(basePos.x, basePos.y - drop, basePos.z);
   cam.lookAt(baseTarget.x, baseTarget.y - drop, baseTarget.z);
   cam.updateProjectionMatrix();
+  /* title legibility: extra scale on mobile widths; the badge and
+     cloth collision follow automatically via the group matrix */
+  var ts = STYLE.titleScale * (w < 768 ? STYLE.titleScaleM : 1);
+  textGroup.scale.set(ts, ts, ts);
+  textGroup.updateMatrixWorld(true);
   anchorContent(h);
   render();
 }
@@ -1510,8 +1515,7 @@ function exportHero(withCTAs){
   }
 
   function applyTitle(){
-    textGroup.scale.set(STYLE.titleScale, STYLE.titleScale, STYLE.titleScale);
-    textGroup.updateMatrixWorld(true);
+    resize();        // scale is applied there (with the mobile boost)
     applyTheme();
   }
   function applyCalm(){ C.damping = STYLE.calm; }
@@ -1529,6 +1533,7 @@ function exportHero(withCTAs){
   rangeCtl('pattern density', 'density', 20, 90, 1, rebuildPatternLive);
   colorCtl('title colour', 'titleColor', applyTitle);
   rangeCtl('title size', 'titleScale', 0.04, 0.3, 0.002, applyTitle);
+  rangeCtl('title size · mobile ×', 'titleScaleM', 1, 2.4, 0.05, applyTitle);
   rangeCtl('subtitle size px', 'kickerSize', 9, 16, 0.5, applyPageStyle);
   rangeCtl('subtitle letter spacing', 'kickerTrack', 0, 0.5, 0.01, applyPageStyle);
   rangeCtl('cloth calm', 'calm', 0.02, 0.35, 0.005, applyCalm);
