@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volumetric Thinking, the book</title>
+<meta name="description" content="Volumetric Thinking, a book about the next shift in digital product design. Pre-order the eBook now.">
+<link rel="canonical" href="https://volthinking.com">
+<meta property="og:title" content="Volumetric Thinking, the book">
+<meta property="og:description" content="A cognitive shift for spatial experience design. Pre-order the eBook.">
+<meta property="og:url" content="https://volthinking.com">
+<meta property="og:type" content="website">
+<!-- add og:image when you export a still: <meta property="og:image" content="https://volthinking.com/og.png"> -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ── VOL.THINKING ─────────────────────────────────────────────────── */
+:root{
+  --paper:#f4f2ee;
+  --ink:#141414;
+  --ink-soft:#5c5a55;
+  --line:rgba(20,20,20,.12);
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'Space Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:17px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--ink);color:var(--paper)}
+a{color:inherit}
+.visually-hidden{
+  position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;
+}
+
+/* ── nav ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:30;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 32px;
+  background:var(--paper);   /* solid bar above all page content */
+}
+.brand{
+  font-family:var(--mono);font-weight:700;font-size:14px;
+  letter-spacing:.18em;text-decoration:none;
+}
+.nav-links{display:flex;gap:26px;align-items:center}
+.nav-links a{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-decoration:none;color:var(--ink-soft);transition:color .2s;
+}
+.nav-links a:hover{color:var(--ink)}
+#nav-toggle{
+  display:none;background:none;border:none;cursor:pointer;
+  font-size:22px;line-height:1;color:var(--ink);padding:6px 8px;
+}
+@media(max-width:767px){
+  #nav-toggle{display:block}
+  .nav-links{
+    display:none;position:absolute;top:58px;right:16px;
+    flex-direction:column;align-items:stretch;gap:0;
+    background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:10px;min-width:200px;
+    box-shadow:0 14px 40px rgba(0,0,0,.12);
+  }
+  .nav-links.open{display:flex}
+  .nav-links a{display:block;padding:12px 14px;text-align:left}
+  .nav-links a.pill{text-align:center;margin-top:6px}
+}
+.pill{
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+  background:var(--ink);color:var(--paper)!important;
+  border-radius:999px;padding:10px 20px;text-decoration:none;
+  transition:opacity .25s ease,transform .15s ease;display:inline-block;
+}
+.pill:hover{opacity:.85}
+.pill:active{transform:scale(.97)}
+@media(max-width:640px){.nav-links a:not(.pill){display:none}}
+
+/* ── hero ── */
+header{
+  position:relative;height:100dvh;min-height:560px;overflow:hidden;
+}
+#icv{position:absolute;inset:0}   /* cursor set by JS only over the cloth */
+#icv canvas{display:block}
+.hero-content{
+  position:absolute;inset:0;z-index:5;pointer-events:none;
+  display:flex;flex-direction:column;justify-content:flex-start;
+  align-items:center;text-align:center;
+  /* padding-top is set each frame to sit just under the cloth's
+     bottom edge, in every view */
+}
+/* kicker + CTAs stay hidden until the JS reveal (title animation done) */
+.hero-kicker{
+  font-family:var(--mono);font-size:var(--kicker-size,11px);
+  letter-spacing:var(--kicker-track,.22em);
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:18px;
+  opacity:0;transform:translateY(14px);
+  transition:opacity 1s ease,transform 1s ease;
+}
+.hero-ctas{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;
+  opacity:0;transform:translateY(14px);
+  transition:opacity 1s ease .2s,transform 1s ease .2s;
+}
+.hero-content.revealed .hero-kicker,
+.hero-content.revealed .hero-ctas{opacity:1;transform:none}
+.hero-ctas>*{pointer-events:auto}
+.cta-primary{
+  font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+  background:var(--ink);color:var(--paper);text-decoration:none;
+  border-radius:999px;padding:15px 30px;transition:opacity .25s,transform .15s;
+}
+.cta-primary:hover{opacity:.85}
+.cta-primary:active{transform:scale(.97)}
+.cta-outline{
+  font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+  color:var(--ink);text-decoration:none;border:1px solid var(--ink);
+  border-radius:999px;padding:14px 28px;
+  transition:background .25s,color .25s,transform .15s;
+}
+.cta-outline:hover{background:var(--ink);color:var(--paper)}
+.cta-outline:active{transform:scale(.97)}
+.scroll-cue{
+  position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:14px;color:var(--ink-soft);
+  animation:bob 2.4s ease-in-out infinite;pointer-events:none;
+}
+@keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
+/* ── responsive framing ──
+   Tall/portrait viewports (any width): hero hugs the scene + CTAs,
+   camera top-anchors the pattern (see resize()).
+   Breakpoints: mobile <768 · tablet 768–1023 · desktop 1024–1439 ·
+   large ≥1440. Only mobile stacks the CTAs. */
+@media(max-aspect-ratio:115/100){
+  header{
+    height:min(100dvh, calc(88vw + var(--hero-extra,250px)));
+    min-height:480px;
+  }
+  .scroll-cue{display:none}
+}
+@media(max-width:767px){
+  header{height:min(100dvh, calc(104vw + var(--hero-extra,250px)))}
+  .hero-ctas{flex-direction:column;gap:12px;align-items:center}
+  .cta-primary,.cta-outline{
+    width:min(360px,84vw);text-align:center;box-sizing:border-box;
+  }
+  .hero-kicker{padding:0 28px}
+}
+
+/* ── scroll reveal (Apple-style): elements rise in as they enter.
+   Distance, blur, and speed are tunable from the style panel. ── */
+.reveal{
+  opacity:0;
+  transform:translateY(var(--reveal-dist,26px));
+  filter:blur(var(--reveal-blur,4px));
+  transition:opacity var(--reveal-dur,.9s) cubic-bezier(.22,.61,.36,1),
+             transform var(--reveal-dur,.9s) cubic-bezier(.22,.61,.36,1),
+             filter var(--reveal-dur,.9s) cubic-bezier(.22,.61,.36,1);
+  transition-delay:var(--rd,0s);
+}
+.reveal.in{opacity:1;transform:none;filter:blur(0)}
+/* the theme cards define their own hover transition, which would
+   override the reveal's — merge both so cards blur-rise like the rest */
+.theme.reveal{
+  transition:background .35s ease,
+             opacity var(--reveal-dur,.9s) cubic-bezier(.22,.61,.36,1),
+             transform var(--reveal-dur,.9s) cubic-bezier(.22,.61,.36,1),
+             filter var(--reveal-dur,.9s) cubic-bezier(.22,.61,.36,1);
+  transition-delay:0s,var(--rd,0s),var(--rd,0s),var(--rd,0s);
+}
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;filter:none;transition:none}
+}
+
+/* ── mute + theme (always visible) + style panel (summoned by ***) ── */
+#style-btn,#mute-btn,#theme-btn{
+  position:fixed;bottom:18px;z-index:40;
+  font-family:var(--mono);font-size:14px;line-height:1;
+  width:38px;height:38px;border-radius:50%;cursor:pointer;
+  transition:opacity .2s,transform .15s;
+}
+#mute-btn,#theme-btn{
+  border:none;background:var(--ink);color:var(--paper);
+  opacity:.9;box-shadow:0 4px 16px rgba(0,0,0,.15);
+}
+#mute-btn{right:18px}
+#theme-btn{right:64px}
+#mute-btn:hover,#theme-btn:hover{opacity:1}
+#mute-btn:active,#theme-btn:active{transform:scale(.94)}
+#mute-btn.muted{text-decoration:line-through;opacity:.55}
+#style-btn{
+  right:110px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink-soft);
+  opacity:.75;display:none;    /* revealed by pressing * three times */
+}
+#style-btn.show{display:block}
+#style-btn:hover{opacity:1}
+#style-panel .sp-file{display:none}
+#style-panel{
+  position:fixed;bottom:66px;right:18px;z-index:40;width:250px;
+  max-height:calc(100dvh - 110px);overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+  background:#101014;border:1px solid rgba(255,255,255,.08);border-radius:14px;
+  padding:16px 18px;display:none;flex-direction:column;gap:12px;
+  color:#e8e8e4;box-shadow:0 12px 40px rgba(0,0,0,.25);
+}
+#style-panel::-webkit-scrollbar{width:4px}
+#style-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+#style-panel.open{display:flex}
+#style-panel .sp-title{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:#8a8a90;
+}
+#style-panel .sp-ctl{display:flex;flex-direction:column;gap:5px}
+#style-panel .sp-row{display:flex;justify-content:space-between;align-items:baseline}
+#style-panel label{font-family:var(--mono);font-size:10px;color:#8a8a90;letter-spacing:.05em}
+#style-panel .sp-val{font-family:var(--mono);font-size:10px;color:#e8e8e4}
+#style-panel input[type=range]{-webkit-appearance:none;width:100%;height:14px;background:transparent;cursor:pointer}
+#style-panel input[type=range]::-webkit-slider-runnable-track{height:2px;background:rgba(255,255,255,.14);border-radius:1px}
+#style-panel input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:#e8e8e4;margin-top:-4.5px}
+#style-panel input[type=range]::-moz-range-track{height:2px;background:rgba(255,255,255,.14)}
+#style-panel input[type=range]::-moz-range-thumb{width:11px;height:11px;border:none;border-radius:50%;background:#e8e8e4}
+#style-panel input[type=color]{
+  -webkit-appearance:none;appearance:none;width:100%;height:26px;
+  border:1px solid rgba(255,255,255,.08);border-radius:7px;background:transparent;padding:2px;cursor:pointer;
+}
+#style-panel input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+#style-panel input[type=color]::-webkit-color-swatch{border:none;border-radius:4px}
+#style-panel .sp-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+#style-panel button{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(255,255,255,.06);color:#e8e8e4;border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:9px;cursor:pointer;transition:background .2s;
+}
+#style-panel button:hover{background:rgba(255,255,255,.14)}
+
+/* ── sections ── */
+section{max-width:820px;margin:0 auto;padding:110px 28px}
+.kicker{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:26px;
+}
+h2{
+  font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,44px);
+  line-height:1.15;margin-bottom:28px;letter-spacing:-0.01em;
+}
+.lede{
+  font-family:var(--serif);font-size:clamp(21px,2.8vw,26px);
+  line-height:1.5;font-weight:400;
+}
+.lede em{font-style:italic}
+p+p{margin-top:1.2em}
+.body-copy{color:var(--ink-soft);max-width:620px}
+.pull{
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(24px,3.4vw,32px);line-height:1.4;
+  margin:2.4em 0;padding-left:26px;border-left:2px solid var(--ink);
+  max-width:640px;
+}
+
+/* inside grid — real borders (not gap-background), so cards can fade
+   in individually without a grey box showing through */
+.themes{
+  display:grid;grid-template-columns:1fr 1fr;
+  border:1px solid var(--line);margin-top:44px;
+}
+.theme{border-bottom:1px solid var(--line)}
+.theme:nth-child(odd){border-right:1px solid var(--line)}
+.theme:nth-child(5),.theme:nth-child(6){border-bottom:none}
+@media(max-width:767px){
+  .themes{grid-template-columns:1fr}
+  .theme:nth-child(odd){border-right:none}
+  .theme:nth-child(5){border-bottom:1px solid var(--line)}
+  .theme:last-child{border-bottom:none}
+}
+.theme{
+  padding:34px 30px;
+  transition:background .35s ease;
+}
+.theme .num{
+  font-family:var(--mono);font-size:11px;color:var(--ink-soft);
+  letter-spacing:.14em;display:inline-block;
+  transition:color .35s ease,transform .35s ease;
+}
+.theme h3{
+  font-family:var(--serif);font-weight:600;font-size:23px;margin:14px 0 10px;
+  transition:transform .35s ease;
+}
+.theme p{font-size:15px;color:var(--ink-soft);line-height:1.6;transition:color .35s ease}
+.theme:hover{background:var(--hover-tint,rgba(20,20,20,.035))}
+.theme:hover .num{color:var(--ink);transform:translateX(4px)}
+.theme:hover h3{transform:translateX(4px)}
+.theme:hover p{color:var(--ink)}
+
+/* author */
+.author-grid{display:flex;gap:48px;align-items:flex-start;flex-wrap:wrap}
+.author-photo{
+  width:min(var(--photo-w,280px),100%);border-radius:14px;flex-shrink:0;
+  filter:grayscale(1);display:block;
+}
+.author-links{display:flex;gap:22px;margin-top:26px}
+.author-links a{
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  color:var(--ink);text-decoration:none;
+  border-bottom:1px solid var(--line);padding-bottom:3px;
+  transition:border-color .2s;
+}
+.author-links a:hover{border-color:var(--ink)}
+
+/* prints */
+#prints .print-cta{margin-top:36px}
+
+/* footer */
+footer{
+  border-top:1px solid var(--line);padding:70px 32px 46px;
+  display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center;
+}
+footer .brand{font-size:16px}
+.colophon{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ink-soft);line-height:2;
+}
+.colophon a{color:var(--ink-soft)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="#top">VOLUMETRIC THINKING</a>
+  <button id="nav-toggle" aria-label="Menu">☰</button>
+  <div class="nav-links" id="nav-links">
+    <a href="#book">The book</a>
+    <a href="#inside">Inside</a>
+    <a href="#prints">Prints</a>
+    <a class="pill" href="https://mybook.to/VolumetricThinking" target="_blank" rel="noopener">Pre-order ↗</a>
+  </div>
+</nav>
+
+<!-- ── HERO — the invisible volume reveals the title ─────────────── -->
+<header id="top">
+  <h1 class="visually-hidden">Volumetric Thinking, a book by Mo Sayyar</h1>
+  <div id="icv" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div class="hero-kicker">A cognitive shift for spatial experience design</div>
+    <div class="hero-ctas">
+      <a class="cta-primary" href="https://mybook.to/VolumetricThinking" target="_blank" rel="noopener">Pre-order eBook</a>
+      <a class="cta-outline" href="https://tally.so/r/ob1Gd5" target="_blank" rel="noopener">Interested in Print?</a>
+    </div>
+  </div>
+  <div class="scroll-cue">↓</div>
+</header>
+
+<!-- ── THE BOOK ──────────────────────────────────────────────────── -->
+<section id="book">
+  <div class="kicker">The book</div>
+  <p class="lede"><em>Volumetric Thinking</em> is a book about the next shift
+  in digital product design: moving beyond screens, surfaces, and flat
+  interfaces into spatial, embodied, and adaptive experiences.</p>
+  <p class="body-copy" style="margin-top:2.2em">For decades, designers have
+  been trained to think in rectangles. Spatial computing changes that, asking
+  us to design with depth, proximity, movement, presence, context, and
+  intelligence as primary materials.</p>
+  <p class="body-copy">Spatial products cannot succeed by simply placing
+  familiar interfaces into 3D space. A floating panel is not automatically a
+  spatial experience. The real opportunity is to design systems that make
+  sense because they exist around us, and without stronger mental models,
+  the industry may scale weak spatial design faster than good spatial design.</p>
+  <blockquote class="pull">What changes when software is no longer something
+  we look at, but something we inhabit?</blockquote>
+  <p class="body-copy">Written for product designers, UX practitioners,
+  creative technologists, design leaders, and founders building for XR,
+  spatial computing, mixed reality, and AI-native interfaces,
+  <em>Volumetric Thinking</em> is about learning to design products that do
+  not just appear around us, but belong around us.</p>
+</section>
+
+<!-- ── INSIDE ────────────────────────────────────────────────────── -->
+<section id="inside" style="padding-top:0">
+  <div class="kicker">The framework</div>
+  <h2>Six shifts for spatial-native design</h2>
+  <div class="themes">
+    <div class="theme">
+      <div class="num">01</div>
+      <h3>From surfaces to volumes</h3>
+      <p>Products are no longer confined to rectangles. Stop arranging pixels
+      on a screen, and start shaping fields of attention and interaction that
+      surround the user and reveal themselves through movement and time.</p>
+    </div>
+    <div class="theme">
+      <div class="num">02</div>
+      <h3>From hierarchy to proximity</h3>
+      <p>What is near feels immediate; what is distant feels secondary.
+      Distance becomes a communication tool, and proximity is semantic, not
+      just ergonomic.</p>
+    </div>
+    <div class="theme">
+      <div class="num">03</div>
+      <h3>From screens to environments</h3>
+      <p>A screen is a frame; an environment is a system. Lighting, walls,
+      pathways, other people, and orientation all become part of the
+      product logic.</p>
+    </div>
+    <div class="theme">
+      <div class="num">04</div>
+      <h3>From flow to choreography</h3>
+      <p>In space, the user journey is partly physical. Design movement that
+      feels worthy of the action, because good choreography is almost
+      invisible.</p>
+    </div>
+    <div class="theme">
+      <div class="num">05</div>
+      <h3>From interface to embodiment</h3>
+      <p>The body is no longer outside the system. Posture, gaze, reach,
+      comfort, and balance are interaction decisions, not afterthoughts.</p>
+    </div>
+    <div class="theme">
+      <div class="num">06</div>
+      <h3>From static layout to adaptive spatial intelligence</h3>
+      <p>Space can reorganise itself around intent and learn from behaviour.
+      The environment stops being a passive container and becomes
+      context-aware, adaptive, and partially intelligent.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── AUTHOR ────────────────────────────────────────────────────── -->
+<section id="author">
+  <div class="kicker">The author</div>
+  <div class="author-grid">
+    <img alt="Mo Sayyar" class="author-photo" id="author-photo">
+    <div>
+      <h2 style="margin-bottom:0">Mo Sayyar</h2>
+      <p class="body-copy" style="margin-top:26px">Mo Sayyar is a London-based
+      design leader and creative technologist with over 20 years of experience
+      across product design, XR, AI, and emerging interaction design. His work
+      explores how technology changes the way we think, create, and experience
+      the world around us.</p>
+      <p class="body-copy">He has led and contributed to work across spatial
+      computing, immersive tools, creative software, and AI-native experiences.
+      Through his writing, Mo makes complex design shifts easier to understand,
+      helping designers, product teams, and technologists prepare for the
+      next generation of human-computer interaction.</p>
+      <div class="author-links">
+        <a href="https://mosayyar.com/" target="_blank" rel="noopener">mosayyar.com ↗</a>
+        <a href="https://www.linkedin.com/in/mosayyar/" target="_blank" rel="noopener">LinkedIn ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRINTS ────────────────────────────────────────────────────── -->
+<section id="prints" style="padding-top:0">
+  <div class="kicker">Print edition</div>
+  <h2>Help bring the printed edition to life.</h2>
+  <p class="body-copy">I'm currently gauging interest in a printed version of
+  <em>Volumetric Thinking</em>. If you'd like to own a physical copy, leave
+  your email and you'll be among the first to hear when it's available.</p>
+  <div class="print-cta">
+    <a class="cta-primary" href="https://tally.so/r/ob1Gd5" target="_blank" rel="noopener">Register interest ↗</a>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────────── -->
+<footer>
+  <a class="brand" href="#top">VOL.THINKING</a>
+  <a class="pill" href="https://mybook.to/VolumetricThinking" target="_blank" rel="noopener">Pre-order eBook ↗</a>
+  <div class="colophon">
+    volthinking.com<br>
+    © 2026 Mo Sayyar. All rights reserved.
+  </div>
+</footer>
+
+<!-- ── title artwork (inline SVG, rendered onto the 3D badge) ── -->
+<script type="text/plain" id="title-svg">
+<svg width="1276" height="98" viewBox="0 0 1276 98" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11.3594 3C15.1229 3 18.3784 5.62313 19.1777 9.30078L30.8457 62.9932C31.276 65.0754 31.7931 67.7216 32.3955 70.9316C32.6999 72.3498 35.0049 72.3637 35.2354 70.9316C35.7517 67.7217 36.225 65.0322 36.6553 62.8633L47.9648 9.3457C48.7466 5.64674 52.0113 3.00007 55.792 3H58.6201C63.8034 3.00026 67.6176 7.85408 66.3926 12.8906L47.1777 91.8906C46.3056 95.476 43.0942 97.9999 39.4043 98H27.4355C23.7534 98 20.5466 95.4866 19.667 91.9111L0.236328 12.9111C-1.0037 7.8694 2.8129 3 8.00488 3H11.3594ZM101.799 0C108.171 1.5433e-07 113.639 1.21912 118.203 3.6582C122.853 6.01016 126.427 9.36427 128.924 13.7197C131.507 17.9882 132.799 22.9977 132.799 28.7471V69.2529C132.799 75.0023 131.507 80.0556 128.924 84.4111C126.427 88.6793 122.853 92.0326 118.203 94.4717C113.639 96.8237 108.171 98 101.799 98C95.5127 98 90.0445 96.8237 85.3945 94.4717C80.7448 92.0327 77.1282 88.6793 74.5449 84.4111C72.0477 80.0556 70.7988 75.0023 70.7988 69.2529V28.7471C70.7988 22.9977 72.0477 17.9882 74.5449 13.7197C77.1282 9.36432 80.7446 6.01014 85.3945 3.6582C90.0445 1.21912 95.5128 0 101.799 0ZM152.35 3C156.768 3.00012 160.35 6.5818 160.35 11V71.7812C160.35 76.1993 163.931 79.7812 168.35 79.7812H180.799C185.217 79.7812 188.799 83.363 188.799 87.7812V90C188.799 94.4183 185.217 98 180.799 98H148.799C144.381 98 140.799 94.4183 140.799 90V11C140.799 6.58172 144.381 3 148.799 3H152.35ZM202.789 2C207.207 2 210.789 5.58172 210.789 10V68.8105C210.789 72.7888 211.779 75.8593 213.76 78.0215C215.826 80.0972 218.711 81.1348 222.414 81.1348C226.031 81.1348 228.873 80.0972 230.939 78.0215C233.006 75.8593 234.039 72.7888 234.039 68.8105V10C234.039 5.58172 237.621 2 242.039 2H245.414C249.832 2 253.414 5.58172 253.414 10V68.9404C253.414 77.8483 250.616 84.9402 245.019 90.2158C239.507 95.405 231.972 98 222.414 98C212.856 98 205.278 95.405 199.681 90.2158C194.17 85.0266 191.414 77.9349 191.414 68.9404V10C191.414 5.58172 194.996 2 199.414 2H202.789ZM277.352 3C280.91 3 284.041 5.35065 285.034 8.76758L292.058 32.9316C293.01 36.0547 293.702 38.7875 294.135 41.1299C294.255 41.6699 295.723 41.6738 295.823 41.1299C296.343 38.7875 297.035 36.0547 297.9 32.9316L304.811 8.79785C305.793 5.36574 308.931 3.00009 312.501 3H320.414C324.832 3 328.414 6.58172 328.414 11V90C328.414 94.4183 324.832 98 320.414 98H318.625C314.207 97.9998 310.625 94.4182 310.625 90V71.9727C310.625 67.201 310.712 62.2123 310.885 57.0068C311.144 51.7148 311.448 46.4661 311.794 41.2607C312.14 36.0553 312.53 31.196 312.963 26.6846C313.065 25.5943 311.44 25.3105 311.17 26.3721L303.813 55.335C303.467 56.7009 302.237 57.6572 300.828 57.6572H292.884C289.258 57.6572 286.085 55.2189 285.152 51.7148L275.308 14.7119C275.74 17.922 276.173 21.7835 276.605 26.2949C277.038 30.7193 277.428 35.5341 277.774 40.7393C278.207 45.858 278.554 51.1073 278.813 56.4863C279.073 61.8653 279.203 67.0275 279.203 71.9727V90C279.203 94.4182 275.621 97.9998 271.203 98H269.414C264.996 98 261.414 94.4183 261.414 90V11C261.414 6.58172 264.996 3 269.414 3H277.352ZM387.414 3C391.832 3 395.414 6.58172 395.414 11V11.6572C395.414 16.0755 391.832 19.6572 387.414 19.6572H363.688C359.269 19.6572 355.688 23.2391 355.688 27.6572V33C355.688 37.4183 359.269 41 363.688 41H382.825C387.243 41 390.825 44.5817 390.825 49V49.6572C390.825 54.0755 387.243 57.6572 382.825 57.6572H363.688C359.269 57.6572 355.688 61.2391 355.688 65.6572V73.3428C355.688 77.7609 359.269 81.3428 363.688 81.3428H387.414C391.832 81.3428 395.414 84.9245 395.414 89.3428V90C395.414 94.4183 391.832 98 387.414 98H344.414C339.996 98 336.414 94.4183 336.414 90V11C336.414 6.58172 339.996 3 344.414 3H387.414ZM462.414 3C466.832 3 470.414 6.58172 470.414 11V13.2188C470.414 17.637 466.832 21.2188 462.414 21.2188H454.577C450.159 21.219 446.577 24.8008 446.577 29.2188V90C446.577 94.4183 442.995 98 438.577 98H435.251C430.833 98 427.251 94.4183 427.251 90V29.2188C427.251 24.8008 423.669 21.219 419.251 21.2188H411.414C406.996 21.2188 403.414 17.637 403.414 13.2188V11C403.414 6.58172 406.996 3 411.414 3H462.414ZM508.964 3C515.724 3 521.574 4.17132 526.514 6.51367C531.454 8.85613 535.267 12.1963 537.954 16.5342C540.727 20.8721 542.114 25.9911 542.114 31.8906C542.114 38.0503 540.598 43.5596 537.564 48.418C536.115 50.8071 534.404 52.8706 532.431 54.6094C529.046 57.5919 527.032 62.3474 528.915 66.4463L538.203 86.6592C540.638 91.959 536.766 98 530.934 98H527.507C524.303 98 521.408 96.0888 520.149 93.1426L508.306 65.4102C507.443 63.3916 505.46 62.082 503.265 62.082C500.238 62.0822 497.784 64.5366 497.784 67.5635V90C497.784 94.4182 494.202 97.9999 489.784 98H486.414C481.996 98 478.414 94.4183 478.414 90V11C478.414 6.58172 481.996 3 486.414 3H508.964ZM597.799 3C602.217 3 605.799 6.58172 605.799 11V11.918C605.799 16.3362 602.217 19.918 597.799 19.918H595.015C590.596 19.918 587.015 23.4997 587.015 27.918V73.082C587.015 77.5003 590.596 81.082 595.015 81.082H597.799C602.217 81.082 605.799 84.6638 605.799 89.082V90C605.799 94.4183 602.217 98 597.799 98H556.799C552.381 98 548.799 94.4183 548.799 90V89.082C548.799 84.6638 552.381 81.082 556.799 81.082H559.583C564.001 81.082 567.583 77.5003 567.583 73.082V27.918C567.583 23.4997 564.001 19.918 559.583 19.918H556.799C552.381 19.918 548.799 16.3362 548.799 11.918V11C548.799 6.58172 552.381 3 556.799 3H597.799ZM645.799 0C652.269 0 657.865 1.21911 662.586 3.6582C667.395 6.01015 671.11 9.32056 673.733 13.5889C675.132 15.7917 676.17 18.2038 676.847 20.8242C677.952 25.1021 674.217 28.7471 669.799 28.7471H666.127C661.709 28.7471 658.623 24.7135 655.948 21.1973C655.619 20.7643 655.252 20.3626 654.848 19.9922C652.749 17.9887 649.733 16.9863 645.799 16.9863C641.864 16.9863 638.804 17.9886 636.618 19.9922C634.52 21.9957 633.471 24.9144 633.471 28.7471V69.2529C633.471 72.9985 634.52 75.9172 636.618 78.0078C638.804 80.0114 641.864 81.0137 645.799 81.0137C649.733 81.0137 652.749 80.0113 654.848 78.0078C655.241 77.6313 655.6 77.2281 655.923 76.7979C658.574 73.2636 661.709 69.2529 666.127 69.2529H669.799C674.217 69.2529 677.946 72.8977 676.83 77.1729C676.153 79.7681 675.121 82.1812 673.733 84.4111C671.111 88.6794 667.394 92.0326 662.586 94.4717C657.865 96.8237 652.269 98 645.799 98C639.416 98 633.82 96.8237 629.012 94.4717C624.203 92.0327 620.444 88.6793 617.733 84.4111C615.11 80.0556 613.799 75.0023 613.799 69.2529V28.7471C613.799 22.9106 615.11 17.8573 617.733 13.5889C620.444 9.32061 624.203 6.01013 629.012 3.6582C633.82 1.21909 639.416 1.30906e-07 645.799 0ZM783.799 3C788.217 3 791.799 6.58172 791.799 11V13.2188C791.799 17.637 788.217 21.2188 783.799 21.2188H775.962C771.544 21.219 767.962 24.8008 767.962 29.2188V90C767.962 94.4183 764.38 98 759.962 98H756.636C752.217 98 748.636 94.4183 748.636 90V29.2188C748.636 24.8008 745.054 21.219 740.636 21.2188H732.799C728.381 21.2188 724.799 17.637 724.799 13.2188V11C724.799 6.58172 728.381 3 732.799 3H783.799ZM811.351 3C815.769 3.00025 819.351 6.58188 819.351 11V31.4385C819.351 35.8567 822.932 39.4385 827.351 39.4385H833.247C837.665 39.4385 841.247 35.8567 841.247 31.4385V11C841.247 6.58188 844.829 3.00025 849.247 3H852.799C857.217 3 860.799 6.58172 860.799 11V90C860.799 94.4183 857.217 98 852.799 98H849.247C844.829 97.9997 841.247 94.4181 841.247 90V65.6572C841.247 61.2391 837.665 57.6572 833.247 57.6572H827.351C822.932 57.6572 819.351 61.2391 819.351 65.6572V90C819.351 94.4181 815.769 97.9998 811.351 98H807.799C803.381 98 799.799 94.4183 799.799 90V11C799.799 6.58172 803.381 3 807.799 3H811.351ZM918.414 3C922.832 3 926.414 6.58172 926.414 11V11.918C926.414 16.3362 922.832 19.918 918.414 19.918H915.63C911.212 19.918 907.63 23.4997 907.63 27.918V73.082C907.63 77.5003 911.212 81.082 915.63 81.082H918.414C922.832 81.082 926.414 84.6638 926.414 89.082V90C926.414 94.4183 922.832 98 918.414 98H877.414C872.996 98 869.414 94.4183 869.414 90V89.082C869.414 84.6638 872.996 81.082 877.414 81.082H880.198C884.616 81.082 888.198 77.5003 888.198 73.082V27.918C888.198 23.4997 884.616 19.918 880.198 19.918H877.414C872.996 19.918 869.414 16.3362 869.414 11.918V11C869.414 6.58172 872.996 3 877.414 3H918.414ZM951.639 3C955.071 3 958.121 5.18992 959.219 8.44238L978.641 66.0098C979.154 67.53 981.405 67.0646 981.271 65.4658C980.921 61.2148 980.614 57.0071 980.352 52.8428C980.177 48.5916 980.089 44.9908 980.089 42.041V11C980.089 6.58179 983.671 3.00012 988.089 3H989.414C993.832 3 997.414 6.58172 997.414 11V90C997.414 94.4183 993.832 98 989.414 98H980.209C976.767 98 973.71 95.7983 972.62 92.5332L953.043 33.8838C952.615 32.603 950.597 33.0159 950.689 34.3633C950.952 38.1805 951.171 42.0413 951.346 45.9453C951.608 49.8494 951.739 53.32 951.739 56.3564V90C951.739 94.4182 948.157 97.9999 943.739 98H942.414C937.996 98 934.414 94.4183 934.414 90V11C934.414 6.58172 937.996 3 942.414 3H951.639ZM1017.12 3C1021.54 3.00006 1025.12 6.58176 1025.12 11V34.209C1025.12 37.3127 1027.64 39.8291 1030.74 39.8291C1032.99 39.829 1035.02 38.4874 1035.91 36.4199L1048.14 7.85156C1049.4 4.9086 1052.29 3 1055.49 3H1059.43C1065.19 3.0002 1069.07 8.90176 1066.77 14.1846L1053.27 45.3096C1052.41 47.2964 1052.39 49.5483 1053.21 51.5498L1067.84 86.9443C1070.02 92.2109 1066.15 97.9998 1060.45 98H1056.13C1052.87 97.9999 1049.94 96.0237 1048.71 93.0039L1035.86 61.2676C1035.01 59.1641 1032.96 57.7881 1030.69 57.7881C1027.61 57.7882 1025.12 60.2828 1025.12 63.3604V90C1025.12 94.4182 1021.54 97.9999 1017.12 98H1013.41C1009 98 1005.41 94.4183 1005.41 90V11C1005.41 6.58172 1009 3 1013.41 3H1017.12ZM1125.41 3C1129.83 3 1133.41 6.58172 1133.41 11V11.918C1133.41 16.3362 1129.83 19.918 1125.41 19.918H1122.63C1118.21 19.918 1114.63 23.4997 1114.63 27.918V73.082C1114.63 77.5003 1118.21 81.082 1122.63 81.082H1125.41C1129.83 81.082 1133.41 84.6638 1133.41 89.082V90C1133.41 94.4183 1129.83 98 1125.41 98H1084.41C1080 98 1076.41 94.4183 1076.41 90V89.082C1076.41 84.6638 1080 81.082 1084.41 81.082H1087.2C1091.62 81.082 1095.2 77.5003 1095.2 73.082V27.918C1095.2 23.4997 1091.62 19.918 1087.2 19.918H1084.41C1080 19.918 1076.41 16.3362 1076.41 11.918V11C1076.41 6.58172 1080 3 1084.41 3H1125.41ZM1158.25 3C1161.69 3.0001 1164.75 5.20824 1165.84 8.47949L1184.93 65.9941C1185.43 67.4971 1187.66 67.044 1187.53 65.4658C1187.18 61.2148 1186.88 57.0071 1186.62 52.8428C1186.45 48.5916 1186.36 44.9908 1186.36 42.041V11C1186.36 6.58172 1189.95 3 1194.36 3H1195.41C1199.83 3 1203.41 6.58172 1203.41 11V90C1203.41 94.4183 1199.83 98 1195.41 98H1186.6C1183.15 98 1180.08 95.7806 1179 92.4971L1159.75 33.8984C1159.34 32.6319 1157.34 33.0332 1157.43 34.3633C1157.69 38.1805 1157.9 42.0413 1158.08 45.9453C1158.33 49.8494 1158.46 53.3199 1158.46 56.3564V90C1158.46 94.4183 1154.88 98 1150.46 98H1149.41C1145 98 1141.41 94.4183 1141.41 90V11C1141.41 6.58172 1145 3 1149.41 3H1158.25ZM1243.8 0C1250.27 7.72937e-06 1255.86 1.2191 1260.59 3.6582C1265.39 6.01015 1269.11 9.32055 1271.73 13.5889C1273.13 15.7917 1274.17 18.2038 1274.85 20.8242C1275.95 25.1021 1272.22 28.7471 1267.8 28.7471H1264.13C1259.71 28.7471 1256.62 24.7135 1253.95 21.1973C1253.62 20.7643 1253.25 20.3626 1252.85 19.9922C1250.75 17.9887 1247.73 16.9863 1243.8 16.9863C1239.86 16.9863 1236.8 17.9886 1234.62 19.9922C1232.52 21.9957 1231.47 24.9143 1231.47 28.7471V69.2529C1231.47 72.9986 1232.52 75.9172 1234.62 78.0078C1236.8 80.0114 1239.86 81.0137 1243.8 81.0137C1247.73 81.0137 1250.75 80.0113 1252.85 78.0078C1255.03 75.9171 1256.13 72.9987 1256.13 69.2529V68.1035C1256.13 64.1923 1252.96 61.0216 1249.04 61.0215C1245.13 61.0215 1241.96 57.8507 1241.96 53.9395V52.4268C1241.96 48.0085 1245.54 44.4268 1249.96 44.4268H1267.8C1272.22 44.4268 1275.8 48.0085 1275.8 52.4268V69.2529C1275.8 75.0023 1274.44 80.0556 1271.73 84.4111C1269.11 88.6794 1265.39 92.0326 1260.59 94.4717C1255.86 96.8237 1250.27 98 1243.8 98C1237.42 98 1231.82 96.8237 1227.01 94.4717C1222.2 92.0327 1218.44 88.6793 1215.73 84.4111C1213.11 80.0556 1211.8 75.0023 1211.8 69.2529V28.7471C1211.8 22.9106 1213.11 17.8573 1215.73 13.5889C1218.44 9.32062 1222.2 6.01012 1227.01 3.6582C1231.82 1.21912 1237.42 0 1243.8 0ZM101.799 16.9863C97.8377 16.9863 94.9101 17.9886 93.0156 19.9922C91.1212 21.9957 90.1738 24.9142 90.1738 28.7471V69.2529C90.1738 72.9987 91.1212 75.9171 93.0156 78.0078C94.9962 80.0114 97.9238 81.0137 101.799 81.0137C105.674 81.0137 108.559 80.0114 110.453 78.0078C112.434 75.9172 113.424 72.9986 113.424 69.2529V28.7471C113.424 24.9142 112.476 21.9957 110.582 19.9922C108.688 17.9886 105.76 16.9863 101.799 16.9863ZM505.784 19.918C501.366 19.918 497.784 23.4997 497.784 27.918V37.1641C497.784 41.5823 501.366 45.1641 505.784 45.1641H508.964C513.297 45.1641 516.634 44.0799 518.974 41.9111C521.4 39.7423 522.614 36.7057 522.614 32.8018C522.614 28.7241 521.4 25.5575 518.974 23.3018C516.634 21.0461 513.297 19.918 508.964 19.918H505.784Z" fill="black"/>
+</svg>
+</script>
+
+<!-- ── background music (file ships next to this page) ──────────── -->
+<audio id="bg-audio" src="VolThinkingBgAudio.mp3" loop preload="auto"></audio>
+
+<!-- ── style panel (debug) + theme + mute, bottom right ─────────── -->
+<button id="mute-btn" title="Mute music (M)">♪</button>
+<button id="theme-btn" title="Toggle theme (D)">◐</button>
+<button id="style-btn" title="Style panel">✳</button>
+<div id="style-panel"></div>
+
+<script>
+/* mobile nav: links collapse into a menu */
+(function(){
+  var toggle = document.getElementById('nav-toggle');
+  var links = document.getElementById('nav-links');
+  toggle.addEventListener('click', function(e){
+    e.stopPropagation();
+    links.classList.toggle('open');
+  });
+  links.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ links.classList.remove('open'); });
+  });
+  document.addEventListener('click', function(e){
+    if (!links.contains(e.target) && e.target !== toggle)
+      links.classList.remove('open');
+  });
+})();
+
+/* scroll reveal: content gently rises in as it enters the viewport.
+   • Order is strict DOM order: within any batch that appears together,
+     delays follow vertical layout, so nothing appears before the item
+     above it.
+   • Scrolling back to the very top re-arms everything below the fold,
+     so scrolling down replays the animations. */
+(function(){
+  var els = Array.prototype.slice.call(document.querySelectorAll(
+    'section .kicker, section h2, section .lede, section .body-copy, '+
+    'section .pull, section .theme, section .author-links, '+
+    'section .print-cta, .author-photo'));
+  els.forEach(function(el){ el.classList.add('reveal'); });
+  var STAG = 0.09;
+  window.applyRevealStagger = function(s){ STAG = s; };
+  if (!('IntersectionObserver' in window) ||
+      (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    els.forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    var batch = entries.filter(function(e){ return e.isIntersecting; })
+      .map(function(e){ return e.target; });
+    if (!batch.length) return;
+    batch.sort(function(a,b){          // top-to-bottom document order
+      return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+    });
+    batch.forEach(function(el, i){
+      el.style.setProperty('--rd', (i*STAG).toFixed(3)+'s');
+      el.classList.add('in');
+      io.unobserve(el);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+  els.forEach(function(el){ io.observe(el); });
+
+  /* re-arm on returning to the top: anything fully below the fold is
+     hidden again and re-observed, ready to animate on the way down */
+  var rearming = false;
+  window.addEventListener('scroll', function(){
+    if (window.scrollY > 30 || rearming) return;
+    rearming = true;
+    requestAnimationFrame(function(){
+      els.forEach(function(el){
+        if (el.classList.contains('in') &&
+            el.getBoundingClientRect().top > window.innerHeight){
+          el.classList.remove('in');
+          el.style.setProperty('--rd','0s');
+          io.observe(el);
+        }
+      });
+      rearming = false;
+    });
+  }, { passive:true });
+})();
+
+/* author photo: a photo saved in this browser (localStorage) wins;
+   otherwise try the expected filenames next to this page. When nothing
+   is found AND the page is being viewed locally (file://), a visible
+   "add photo" target appears in the slot, so choosing the portrait is
+   one click. Deployed visitors never see the placeholder. */
+window.setAuthorPhoto = function(dataURL){
+  var img = document.getElementById('author-photo');
+  try { localStorage.setItem('volthinking-photo', dataURL); } catch(e){}
+  if (img) img.src = dataURL;
+};
+(function(){
+  var img = document.getElementById('author-photo');
+  img.style.display = 'none';
+  img.addEventListener('load', function(){ img.style.display = 'block'; });
+  var stored = null;
+  try { stored = localStorage.getItem('volthinking-photo'); } catch(e){}
+  if (stored){ img.src = stored; return; }
+  var candidates = ['mo-sayyar.jpg','mo-sayyar.jpeg','mo-sayyar.png',
+    'mo.jpg','author.jpg','author.png'];
+  var i = 0;
+  function tryNext(){
+    if (i >= candidates.length) return;   // add via style panel (***)
+    img.src = candidates[i++];
+  }
+  img.addEventListener('error', tryNext);
+  tryNext();
+})();
+
+/* background music: attempt autoplay; if the browser blocks it, start
+   on the first interaction. Mute button persists the preference. */
+(function(){
+  var audio = document.getElementById('bg-audio');
+  var btn = document.getElementById('mute-btn');
+  var MUTE_KEY = 'volthinking-muted';
+  var muted = localStorage.getItem(MUTE_KEY) === '1';
+  audio.volume = 0.55;
+  audio.muted = muted;
+  function paint(){
+    btn.classList.toggle('muted', muted);
+    btn.title = muted ? 'Unmute music (M)' : 'Mute music (M)';
+  }
+  paint();
+  function tryPlay(){ if (!muted) audio.play().catch(function(){}); }
+  tryPlay();
+  function firstGesture(){
+    tryPlay();
+    window.removeEventListener('pointerdown', firstGesture);
+    window.removeEventListener('keydown', firstGesture);
+  }
+  window.addEventListener('pointerdown', firstGesture);
+  window.addEventListener('keydown', firstGesture);
+  function toggleMute(){
+    muted = !muted;
+    audio.muted = muted;
+    try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch(err){}
+    if (!muted && audio.paused) audio.play().catch(function(){});
+    paint();
+  }
+  btn.addEventListener('click', function(e){ e.stopPropagation(); toggleMute(); });
+  window.addEventListener('keydown', function(e){
+    if (e.key !== 'm' && e.key !== 'M') return;
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    toggleMute();
+  });
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     INVISIBLE CLOTH VOLUME — hero runtime
+     To update the scene: re-export the embed from the tool and
+     replace ONLY the CFG line below with the new one.
+     ══════════════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ▼▼▼ PASTE NEW CFG FROM THE TOOL HERE ▼▼▼ */
+var CFG = {"pattern":{"char":"+","density":43,"size":0.106,"weight":2,"rotRandom":0,"opacity":1,"color":"#000000"},"cloth":{"w":4,"h":4,"res":38,"stiffness":0.47,"damping":0.1,"gravity":5.5,"wind":0,"turbulence":0,"pinTop":true},"clothT":{"px":0,"py":0,"pz":0,"rx":0,"ry":0,"rz":0,"s":1},"shape":{"kind":"box","px":0,"py":0.03359353528019707,"pz":1.49,"rx":9.819871891892342,"ry":0,"rz":0,"sx":1.5,"sy":1.5,"sz":1,"softness":0.41},"text":{"str":"VOLUMETRIC THINKING","depth":0.05,"visible":true,"color":"#000000","opacity":1,"weight":"bold","cont":{"pad":0.4,"corner":0.28,"color":"#ffffff","opacity":1},"px":0,"py":1.1813966172816697,"pz":1.56,"rx":0,"ry":0,"rz":0,"sx":0.1,"sy":0.1,"sz":0.1,"softness":0.3},"camera":{"pos":[-0.016905438389034192,-0.09955169512905356,6.611177196937503],"target":[-0.016905438389034192,-0.09955169512905394,0.2],"fov":40,"ortho":false,"zoom":1,"orthoSize":2.4},"anim":{"a":{"px":0,"py":-0.15,"pz":-1.26,"rx":0,"ry":0,"rz":0,"sx":1.5,"sy":1.5,"sz":1},"b":{"px":0,"py":0.03359353528019707,"pz":1.56,"rx":9.733984215485659,"ry":0,"rz":0,"sx":1.5,"sy":1.5,"sz":1},"dur":2,"ease":"easeInOut"}};
+/* ▲▲▲ PASTE NEW CFG FROM THE TOOL HERE ▲▲▲ */
+
+/* landing-page adaptations: reduced motion + mobile density */
+var REDUCED = window.matchMedia &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── STYLE — visual parameters of the page + hero, tunable in the
+   debug panel (✳, bottom right) and saved to localStorage.
+   The title badge always matches the page background. ── */
+var STYLE_KEY = 'volthinking-style-v1';
+var STYLE = {
+  paper:'#f4f2ee', ink:'#141414', inkSoft:'#5c5a55',
+  pattern: CFG.pattern.color,
+  size: CFG.pattern.size,
+  density: CFG.pattern.density,
+  animDur: CFG.anim ? CFG.anim.dur : 2,
+  followK: 0.25,
+  titleScale: CFG.text.sx,        // 3D title size
+  titleColor: CFG.text.color,
+  titleTrack: 0,                  // kept for saved-defaults compat (unused: SVG title)
+  kickerSize: 11,                 // subtitle px
+  kickerTrack: 0.22,              // subtitle letter spacing (em)
+  calm: Math.max(CFG.cloth.damping, 0.12),  // velocity damping → less jitter
+  // scroll-reveal animation
+  revealDur: 0.9,                 // seconds
+  revealDist: 26,                 // px rise
+  revealBlur: 4,                  // px blur while hidden
+  revealStagger: 0.09,            // s between siblings
+  // author photo
+  photoScale: 280,                // px width
+  // hero spacing / pattern framing
+  patternZoom: 1,                 // pattern scale, works at EVERY aspect
+  ctaGapM: 26,                    // pattern→CTA gap px, mobile (<768)
+  ctaGapT: 26,                    // pattern→CTA gap px, tablet (768–1023)
+  ctaGapD: 26,                    // pattern→CTA gap px, desktop (≥1024)
+  patternRefM: 0.92,              // containment aspect, mobile (narrow only)
+  patternRefW: 1.15,              // containment aspect, tablet and up
+  heroExtra: 250,                 // px reserved under the pattern (compact hero)
+  navPad: 84,                     // px pattern top gap under the nav
+  // theme — light palette above; dark palette below (D key toggles)
+  theme: 'light',
+  darkPaper: '#101014',
+  darkInk: '#e8e8e4',
+  darkInkSoft: '#9a9aa0',
+  darkPattern: '#e8e8e4',
+  darkTitleColor: '#e8e8e4'
+};
+try {
+  var savedStyle = JSON.parse(localStorage.getItem(STYLE_KEY) || 'null');
+  if (savedStyle){
+    for (var sk in STYLE) if (sk in savedStyle) STYLE[sk] = savedStyle[sk];
+    if ('ctaGap' in savedStyle && !('ctaGapD' in savedStyle))   // migrate
+      STYLE.ctaGapM = STYLE.ctaGapT = STYLE.ctaGapD = savedStyle.ctaGap;
+  }
+} catch(e){}
+/* active palette: light keys or dark keys depending on STYLE.theme */
+function pal(){
+  var d = STYLE.theme === 'dark';
+  return {
+    paper: d ? STYLE.darkPaper : STYLE.paper,
+    ink: d ? STYLE.darkInk : STYLE.ink,
+    inkSoft: d ? STYLE.darkInkSoft : STYLE.inkSoft,
+    pattern: d ? STYLE.darkPattern : STYLE.pattern,
+    title: d ? STYLE.darkTitleColor : STYLE.titleColor,
+    line: d ? 'rgba(255,255,255,.14)' : 'rgba(20,20,20,.12)',
+    hover: d ? 'rgba(255,255,255,.05)' : 'rgba(20,20,20,.035)'
+  };
+}
+function applyPageStyle(){
+  var rs = document.documentElement.style;
+  var p = pal();
+  rs.setProperty('--paper', p.paper);
+  rs.setProperty('--ink', p.ink);
+  rs.setProperty('--ink-soft', p.inkSoft);
+  rs.setProperty('--line', p.line);
+  rs.setProperty('--hover-tint', p.hover);
+  rs.setProperty('--kicker-size', STYLE.kickerSize + 'px');
+  rs.setProperty('--kicker-track', STYLE.kickerTrack + 'em');
+  rs.setProperty('--reveal-dur', STYLE.revealDur + 's');
+  rs.setProperty('--reveal-dist', STYLE.revealDist + 'px');
+  rs.setProperty('--reveal-blur', STYLE.revealBlur + 'px');
+  rs.setProperty('--photo-w', STYLE.photoScale + 'px');
+  rs.setProperty('--hero-extra', STYLE.heroExtra + 'px');
+  if (window.applyRevealStagger) window.applyRevealStagger(STYLE.revealStagger);
+}
+applyPageStyle();
+CFG.pattern.color = pal().pattern;
+CFG.pattern.size = STYLE.size;
+CFG.pattern.density = STYLE.density;
+if (CFG.anim) CFG.anim.dur = STYLE.animDur;
+if (CFG.text.cont) CFG.text.cont.color = pal().paper;   // badge = page bg
+CFG.text.sx = CFG.text.sy = CFG.text.sz = STYLE.titleScale;
+CFG.text.color = pal().title;
+CFG.cloth.damping = STYLE.calm;
+
+/* theme application: page vars + 3D materials, callable any time */
+function applyTheme(){
+  applyPageStyle();
+  var p = pal();
+  if (typeof mat !== 'undefined') mat.color.set(p.pattern);
+  if (textMatE) textMatE.color.set(p.title);
+  if (contMatE) contMatE.color.set(p.paper);
+  var tb = document.getElementById('theme-btn');
+  if (tb) tb.textContent = STYLE.theme === 'dark' ? '◑' : '◐';
+  if (typeof render === 'function' && typeof pattern !== 'undefined') render();
+}
+window.toggleTheme = function(){
+  STYLE.theme = STYLE.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+};
+
+if (window.innerWidth < 640)
+  CFG.pattern.density = Math.max(24, Math.round(CFG.pattern.density*0.7));
+
+/* ── stage ── */
+var host = document.getElementById('icv');
+var renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+host.appendChild(renderer.domElement);
+var scene = new THREE.Scene();
+
+var cam;
+if (CFG.camera.ortho){
+  cam = new THREE.OrthographicCamera(-1,1,1,-1,0.01,100);
+  cam.zoom = CFG.camera.zoom;
+} else {
+  cam = new THREE.PerspectiveCamera(CFG.camera.fov, 1, 0.1, 100);
+}
+var basePos = new THREE.Vector3().fromArray(CFG.camera.pos);
+var baseTarget = new THREE.Vector3().fromArray(CFG.camera.target);
+cam.position.copy(basePos);
+cam.lookAt(baseTarget);
+
+/* responsive framing: the scene was composed on a wide desktop view.
+   On narrow windows the vertical FOV widens so the full composition
+   still fits horizontally, and the whole view is TOP-ANCHORED: the
+   extra vertical room opens up below the pattern, so the gap between
+   the pattern and the top edge stays exactly as designed. Aspects
+   wider than the reference are untouched. On mobile the reference is
+   tighter, so the pattern fills more of the width (smaller side gaps). */
+function refAspect(w){ return w < 768 ? STYLE.patternRefM : STYLE.patternRefW; }
+function resize(){
+  var w = host.clientWidth || 300, h = host.clientHeight || 300, a = w/h;
+  var REF = refAspect(w);
+  var zoom = Math.max(STYLE.patternZoom, 0.2);   // works at EVERY aspect
+  renderer.setSize(w, h);
+  var drop = 0, NAV_PX = STYLE.navPad;   // pattern top gap under the nav
+  if (CFG.camera.ortho){
+    var s0 = CFG.camera.orthoSize / zoom;
+    var s = s0 * Math.max(1, REF/a);
+    cam.left=-s*a; cam.right=s*a; cam.top=s; cam.bottom=-s;
+    drop = s - s0;                                // top-align the design
+    if (drop > 0) drop = Math.max(0, drop - (NAV_PX/h)*2*s);
+  } else {
+    // zoom scales the whole design frame; REF containment on top
+    var f0 = 2*Math.atan(Math.tan(CFG.camera.fov*Math.PI/360) / zoom) * 180/Math.PI;
+    var f = f0;
+    if (a < REF){
+      f = 2*Math.atan(Math.tan(f0*Math.PI/360) * REF/a) * 180/Math.PI;
+      var dist = basePos.distanceTo(baseTarget);
+      var halfNow = Math.tan(f*Math.PI/360) * dist;
+      drop = halfNow - Math.tan(f0*Math.PI/360) * dist;
+      drop = Math.max(0, drop - (NAV_PX/h)*2*halfNow);
+    }
+    cam.fov = f;
+    cam.aspect = a;
+  }
+  // shift camera + target down by the extra half-height, so the
+  // designed frame hugs the top edge and slack falls below
+  cam.position.set(basePos.x, basePos.y - drop, basePos.z);
+  cam.lookAt(baseTarget.x, baseTarget.y - drop, baseTarget.z);
+  cam.updateProjectionMatrix();
+  anchorContent(h);
+  render();
+}
+
+/* subtitle + CTAs anchor to the CLOTH CONTAINER (its rest rectangle),
+   not the live simulation, so they hold still while the fabric moves.
+   The gap is tunable from the style panel (ctaGap). */
+var _ac = new THREE.Vector3();
+function anchorContent(h){
+  if (!heroContent) return;
+  cam.updateMatrixWorld(true);
+  var w2 = CFG.cloth.w/2, h2 = CFG.cloth.h/2, bottom = -1e9;
+  [[-w2,-h2],[w2,-h2],[0,-h2]].forEach(function(p){
+    _ac.set(p[0], p[1], 0)
+      .applyMatrix4(clothGroup.matrixWorld).project(cam);
+    bottom = Math.max(bottom, (-_ac.y*0.5 + 0.5) * h);
+  });
+  var w = host.clientWidth || 300;
+  var gap = w < 768 ? STYLE.ctaGapM : (w < 1024 ? STYLE.ctaGapT : STYLE.ctaGapD);
+  heroContent.style.paddingTop =
+    Math.max(80, Math.min(bottom + gap, h - 190)) + 'px';
+}
+if (window.ResizeObserver) new ResizeObserver(resize).observe(host);
+window.addEventListener('resize', resize);
+
+var d2r = function(d){ return d*Math.PI/180; };
+var clothGroup = new THREE.Group(); scene.add(clothGroup);
+clothGroup.position.set(CFG.clothT.px, CFG.clothT.py, CFG.clothT.pz);
+clothGroup.rotation.set(d2r(CFG.clothT.rx), d2r(CFG.clothT.ry), d2r(CFG.clothT.rz));
+clothGroup.scale.setScalar(CFG.clothT.s);
+var cubeGroup = new THREE.Group(); scene.add(cubeGroup);   // invisible collider
+cubeGroup.position.set(CFG.shape.px, CFG.shape.py, CFG.shape.pz);
+cubeGroup.rotation.set(d2r(CFG.shape.rx), d2r(CFG.shape.ry), d2r(CFG.shape.rz));
+cubeGroup.scale.set(CFG.shape.sx, CFG.shape.sy, CFG.shape.sz);
+var textGroup = new THREE.Group(); scene.add(textGroup);
+textGroup.position.set(CFG.text.px, CFG.text.py, CFG.text.pz);
+textGroup.rotation.set(d2r(CFG.text.rx), d2r(CFG.text.ry), d2r(CFG.text.rz));
+textGroup.scale.set(CFG.text.sx, CFG.text.sy, CFG.text.sz);
+clothGroup.updateMatrixWorld(true);
+cubeGroup.updateMatrixWorld(true);
+textGroup.updateMatrixWorld(true);
+
+/* ── keyframed collider animation (start → end, eased) ── */
+var ANIM = CFG.anim;
+var EASES = {
+  linear: function(t){ return t; },
+  easeOut: function(t){ return 1 - Math.pow(1-t, 3); },
+  easeInOut: function(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+};
+function lerp(a,b,t){ return a + (b-a)*t; }
+function tweenCube(t){
+  var A = ANIM.a, B = ANIM.b;
+  cubeGroup.position.set(lerp(A.px,B.px,t), lerp(A.py,B.py,t), lerp(A.pz,B.pz,t));
+  cubeGroup.rotation.set(d2r(lerp(A.rx,B.rx,t)), d2r(lerp(A.ry,B.ry,t)), d2r(lerp(A.rz,B.rz,t)));
+  cubeGroup.scale.set(lerp(A.sx,B.sx,t), lerp(A.sy,B.sy,t), lerp(A.sz,B.sz,t));
+  cubeGroup.updateMatrixWorld(true);
+}
+if (ANIM) tweenCube(0);
+
+/* ── glyph texture ── */
+var PT = CFG.pattern;
+var gc = document.createElement('canvas'); gc.width = gc.height = 512;
+(function(){
+  var ctx = gc.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.strokeStyle='#fff';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
+  ctx.font = '400 340px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  ctx.fillText(PT.char, 256, 276);
+  if (PT.weight > 0){ ctx.lineWidth = PT.weight*4; ctx.strokeText(PT.char, 256, 276); }
+})();
+var tex = new THREE.CanvasTexture(gc);
+tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+var mat = new THREE.MeshBasicMaterial({ map:tex, side:THREE.DoubleSide,
+  transparent:true, alphaTest:0.35, color:new THREE.Color(PT.color), opacity:PT.opacity });
+var D = PT.density;
+var pattern = new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), mat, D*D);
+pattern.frustumCulled = false;
+clothGroup.add(pattern);
+var spin = new Float32Array(D*D);
+(function(){
+  var a = 1337|0;
+  function r(){ a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }
+  for (var i=0;i<D*D;i++) spin[i]=(r()*2-1)*Math.PI;
+})();
+
+/* ── visible title (SVG wordmark on the 3D badge) ──
+   The uploaded Title.svg (inline, #title-svg) is rasterised to a
+   white mask texture on a plane, so the theme system tints it like
+   everything else. Plane height matches the old 3D type's cap height,
+   so scale, position, badge, collision, and the fade-in behave
+   exactly as before. */
+var TXT = CFG.text, textSDF = null;
+var textMeshE = null, textMatE = null, contMeshE = null, contMatE = null;
+
+(function(){
+  var carrier = document.getElementById('title-svg');
+  if (!carrier) return;
+  var img = new Image();
+  img.onload = function(){ buildTitleFromSVG(img); };
+  img.src = 'data:image/svg+xml;charset=utf-8,' +
+    encodeURIComponent(carrier.textContent.trim());
+})();
+
+function buildTitleFromSVG(img){
+  var AR = img.width / img.height;                // 1276 / 98
+  var Hloc = 0.72, Wloc = Hloc * AR;              // old type's cap height
+  var depth = Math.max(TXT.depth, 0.02), hd = depth/2;
+
+  /* white-mask texture: browser rasterises the vector at target size */
+  var tw = 2560, th = Math.max(64, Math.round(tw/AR));
+  var cv = document.createElement('canvas');
+  cv.width = tw; cv.height = th;
+  var c2 = cv.getContext('2d');
+  c2.drawImage(img, 0, 0, tw, th);
+  c2.globalCompositeOperation = 'source-in';
+  c2.fillStyle = '#fff';
+  c2.fillRect(0, 0, tw, th);
+  var tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  textMatE = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, depthWrite: false,
+    color: pal().title, opacity: TXT.opacity });
+  textMeshE = new THREE.Mesh(new THREE.PlaneGeometry(Wloc, Hloc), textMatE);
+  textMeshE.position.z = hd + 0.006;              // proud of the badge face
+  textMeshE.visible = false;                      // fade gate shows it
+  textGroup.add(textMeshE);
+
+  var hx = Wloc/2, hy = Hloc/2;
+  if (TXT.cont){
+    /* rounded badge + analytic collision, identical to before */
+    var hw2 = hx + TXT.cont.pad, hh2 = hy + TXT.cont.pad;
+    var rr = Math.max(Math.min(TXT.cont.corner, Math.min(hw2,hh2)-0.001), 0.0001);
+    var rs = new THREE.Shape();
+    rs.moveTo(-hw2+rr,-hh2);
+    rs.lineTo( hw2-rr,-hh2); rs.absarc( hw2-rr,-hh2+rr, rr, -Math.PI/2, 0, false);
+    rs.lineTo( hw2, hh2-rr); rs.absarc( hw2-rr, hh2-rr, rr, 0, Math.PI/2, false);
+    rs.lineTo(-hw2+rr, hh2); rs.absarc(-hw2+rr, hh2-rr, rr, Math.PI/2, Math.PI, false);
+    rs.lineTo(-hw2,-hh2+rr); rs.absarc(-hw2+rr,-hh2+rr, rr, Math.PI, 1.5*Math.PI, false);
+    var cgeo = new THREE.ExtrudeGeometry(rs, {depth:depth, bevelEnabled:false, curveSegments:8});
+    cgeo.translate(0, 0, -depth/2 - 0.02);
+    contMatE = new THREE.MeshBasicMaterial({
+      color: pal().paper, transparent: true, opacity: TXT.cont.opacity });
+    contMeshE = new THREE.Mesh(cgeo, contMatE);
+    contMeshE.visible = false;
+    textGroup.add(contMeshE);
+    textSDF = { hx:hw2, hy:hh2, hd:hd, r:rr, cell:0.02,
+      at:function(px,py){
+        if (Math.abs(px)>=this.hx||Math.abs(py)>=this.hy) return 0;
+        var qx=Math.abs(px)-(this.hx-this.r), qy=Math.abs(py)-(this.hy-this.r);
+        var sd=(qx>0&&qy>0)? Math.sqrt(qx*qx+qy*qy)-this.r : Math.max(qx,qy)-this.r;
+        return Math.max(0,-sd); } };
+  } else {
+    /* no badge: chamfer distance field from the SVG's own alpha */
+    var W = 768, H = Math.max(24, Math.round(W/AR));
+    var mcv = document.createElement('canvas');
+    mcv.width = W; mcv.height = H;
+    var mctx = mcv.getContext('2d');
+    mctx.drawImage(img, 0, 0, W, H);
+    var cellX = Wloc/W, cellY = Hloc/H;
+    var data = mctx.getImageData(0,0,W,H).data, INF=1e9, R2=Math.SQRT2;
+    var dist = new Float32Array(W*H), x, y, kk, d;
+    for (var i2=0;i2<W*H;i2++) dist[i2] = data[i2*4+3]>127 ? INF : 0;
+    for (y=0;y<H;y++) for (x=0;x<W;x++){ kk=y*W+x; d=dist[kk];
+      if (x>0) d=Math.min(d,dist[kk-1]+1);
+      if (y>0){ d=Math.min(d,dist[kk-W]+1);
+        if (x>0) d=Math.min(d,dist[kk-W-1]+R2);
+        if (x<W-1) d=Math.min(d,dist[kk-W+1]+R2); }
+      dist[kk]=d; }
+    for (y=H-1;y>=0;y--) for (x=W-1;x>=0;x--){ kk=y*W+x; d=dist[kk];
+      if (x<W-1) d=Math.min(d,dist[kk+1]+1);
+      if (y<H-1){ d=Math.min(d,dist[kk+W]+1);
+        if (x<W-1) d=Math.min(d,dist[kk+W+1]+R2);
+        if (x>0) d=Math.min(d,dist[kk+W-1]+R2); }
+      dist[kk]=d; }
+    var cell = Math.min(cellX, cellY);
+    textSDF = { W:W, H:H, dist:dist, hx:hx, hy:hy, hd:hd,
+      cellX:cellX, cellY:cellY, cell:cell,
+      at:function(px,py){
+        var ii=Math.floor((px+this.hx)/this.cellX);
+        var jj=Math.floor((this.hy-py)/this.cellY);
+        if (ii<0||jj<0||ii>=this.W||jj>=this.H) return 0;
+        return this.dist[jj*this.W+ii]*this.cell; } };
+  }
+  if (simTime===0) warmSettle();
+  applyTheme();
+  render();
+}
+
+/* ── Verlet cloth (identical physics to the editor) ── */
+var C = CFG.cloth, S = CFG.shape;
+var cloth = {
+  cols:0, rows:0, pos:[], prev:[], pinned:[], pinPos:[], constraints:[],
+  _ci:new THREE.Matrix4(), _bi:new THREE.Matrix4(), _ti:new THREE.Matrix4(),
+  _v:new THREE.Vector3(),
+  build:function(){
+    var segs=C.res; this.cols=segs+1; this.rows=segs+1;
+    this.pos=[]; this.prev=[]; this.pinned=[]; this.pinPos=[];
+    for (var j=0;j<this.rows;j++) for (var i=0;i<this.cols;i++){
+      var p=new THREE.Vector3((i/(this.cols-1)-0.5)*C.w,(0.5-j/(this.rows-1))*C.h,0);
+      this.pos.push(p); this.prev.push(p.clone());
+      this.pinned.push(j===0); this.pinPos.push(p.clone());
+    }
+    this.constraints=[];
+    var idx=function(cols,i,j){return j*cols+i;}, self=this;
+    var add=function(a,b){ self.constraints.push([a,b,self.pos[a].distanceTo(self.pos[b])]); };
+    for (j=0;j<this.rows;j++) for (i=0;i<this.cols;i++){
+      if (i<this.cols-1) add(idx(this.cols,i,j),idx(this.cols,i+1,j));
+      if (j<this.rows-1) add(idx(this.cols,i,j),idx(this.cols,i,j+1));
+      if (i<this.cols-1&&j<this.rows-1){ add(idx(this.cols,i,j),idx(this.cols,i+1,j+1));
+        add(idx(this.cols,i+1,j),idx(this.cols,i,j+1)); }
+      if (i<this.cols-2) add(idx(this.cols,i,j),idx(this.cols,i+2,j));
+      if (j<this.rows-2) add(idx(this.cols,i,j),idx(this.cols,i,j+2));
+    }
+  },
+  step:function(dt,time){
+    var n=this.pos.length;
+    var qInv=clothGroup.quaternion.clone().invert();
+    var s=Math.max(CFG.clothT.s,1e-4);
+    var g=new THREE.Vector3(0,-C.gravity,0).applyQuaternion(qInv).divideScalar(s);
+    var wind=new THREE.Vector3(Math.sin(time*0.6)*0.35,0,1).applyQuaternion(qInv)
+      .multiplyScalar(C.wind/s);
+    var keep=1-C.damping, dt2=dt*dt, tmp=this._v, k, p, pp;
+    for (k=0;k<n;k++){
+      if (this.pinned[k]&&C.pinTop) continue;
+      p=this.pos[k]; pp=this.prev[k];
+      tmp.subVectors(p,pp).multiplyScalar(keep);
+      pp.copy(p); p.add(tmp);
+      p.x+=(g.x+wind.x)*dt2; p.y+=(g.y+wind.y)*dt2; p.z+=(g.z+wind.z)*dt2;
+      if (C.turbulence>0){ var t3=time*1.7;
+        p.x+=Math.sin(p.y*3.1+t3)*C.turbulence*0.15*dt2*60;
+        p.z+=Math.cos(p.x*2.7+t3*1.31)*C.turbulence*0.35*dt2*60; }
+    }
+    var kc=C.stiffness*0.5, it, c, cn, pa, pb, dd, diff, pinA, pinB;
+    for (it=0;it<5;it++){
+      for (c=0;c<this.constraints.length;c++){
+        cn=this.constraints[c]; pa=this.pos[cn[0]]; pb=this.pos[cn[1]];
+        tmp.subVectors(pb,pa); dd=tmp.length(); if (dd===0) continue;
+        diff=(dd-cn[2])/dd*kc;
+        pinA=this.pinned[cn[0]]&&C.pinTop; pinB=this.pinned[cn[1]]&&C.pinTop;
+        if (!pinA&&!pinB){ pa.addScaledVector(tmp,diff); pb.addScaledVector(tmp,-diff); }
+        else if (pinA&&!pinB) pb.addScaledVector(tmp,-diff*2);
+        else if (!pinA&&pinB) pa.addScaledVector(tmp,diff*2);
+      }
+      this.collideShape();
+      this.collideText();
+      if (C.pinTop) for (k=0;k<n;k++) if (this.pinned[k]) this.pos[k].copy(this.pinPos[k]);
+    }
+  },
+  collideShape:function(){
+    var cm=clothGroup.matrixWorld, ci=this._ci.copy(cm).invert();
+    var bm=cubeGroup.matrixWorld, bi=this._bi.copy(bm).invert();
+    var HALF=0.5, SKIN=0.02, v=this._v, kind=S.kind, i, p, hit;
+    for (i=0;i<this.pos.length;i++){
+      p=this.pos[i];
+      v.copy(p).applyMatrix4(cm).applyMatrix4(bi);
+      hit=false;
+      if (kind==='box'){
+        if (Math.abs(v.x)<HALF&&Math.abs(v.y)<HALF&&Math.abs(v.z)<HALF){
+          var dx=HALF-Math.abs(v.x), dy=HALF-Math.abs(v.y), dz=HALF-Math.abs(v.z);
+          if (dx<=dy&&dx<=dz) v.x=(v.x<0?-1:1)*(HALF+SKIN);
+          else if (dy<=dx&&dy<=dz) v.y=(v.y<0?-1:1)*(HALF+SKIN);
+          else v.z=(v.z<0?-1:1)*(HALF+SKIN);
+          hit=true; }
+      } else if (kind==='sphere'){
+        var dl=v.length();
+        if (dl<HALF){ if (dl<1e-6) v.set(0,HALF+SKIN,0);
+          else v.multiplyScalar((HALF+SKIN)/dl); hit=true; }
+      } else if (kind==='cylinder'){
+        var r=Math.sqrt(v.x*v.x+v.z*v.z);
+        if (r<HALF&&Math.abs(v.y)<HALF){
+          if (HALF-Math.abs(v.y)<=HALF-r) v.y=(v.y<0?-1:1)*(HALF+SKIN);
+          else { var sc=(HALF+SKIN)/Math.max(r,1e-6); v.x*=sc; v.z*=sc; }
+          hit=true; }
+      } else if (kind==='cone'){
+        if (v.y>-HALF&&v.y<HALF){
+          var R=(HALF-v.y)*0.5, rr=Math.sqrt(v.x*v.x+v.z*v.z);
+          if (rr<R){
+            if (v.y+HALF<=(R-rr)*0.894||rr<1e-6) v.y=-(HALF+SKIN);
+            else { var s2=(R+SKIN)/rr; v.x*=s2; v.z*=s2; }
+            hit=true; } }
+      }
+      if (hit){ v.applyMatrix4(bm).applyMatrix4(ci); p.lerp(v,S.softness); }
+    }
+  },
+  collideText:function(){
+    if (!textSDF) return;
+    var cm=clothGroup.matrixWorld, ci=this._ci.copy(cm).invert();
+    var tm=textGroup.matrixWorld, ti=this._ti.copy(tm).invert();
+    var SD=textSDF, SKIN=0.02, v=this._v, i, p, d, zPen;
+    for (i=0;i<this.pos.length;i++){
+      p=this.pos[i];
+      v.copy(p).applyMatrix4(cm).applyMatrix4(ti);
+      if (Math.abs(v.z)>=SD.hd||Math.abs(v.x)>=SD.hx||Math.abs(v.y)>=SD.hy) continue;
+      d=SD.at(v.x,v.y); if (d<=0) continue;
+      zPen=SD.hd-Math.abs(v.z);
+      if (zPen<=d) v.z=(v.z<0?-1:1)*(SD.hd+SKIN);
+      else {
+        var e=SD.cell;
+        var gx=SD.at(v.x+e,v.y)-SD.at(v.x-e,v.y);
+        var gy=SD.at(v.x,v.y+e)-SD.at(v.x,v.y-e);
+        var gl=Math.sqrt(gx*gx+gy*gy);
+        if (gl<1e-6) v.z=(v.z<0?-1:1)*(SD.hd+SKIN);
+        else { gx/=gl; gy/=gl; v.x-=gx*(d+SKIN); v.y-=gy*(d+SKIN); }
+      }
+      v.applyMatrix4(tm).applyMatrix4(ci);
+      p.lerp(v,TXT.softness);
+    }
+  },
+  sample:function(u,v,out){
+    var x=u*(this.cols-1), y=v*(this.rows-1);
+    var i0=Math.min(Math.floor(x),this.cols-2), j0=Math.min(Math.floor(y),this.rows-2);
+    var fx=x-i0, fy=y-j0;
+    var a=this.pos[j0*this.cols+i0], b=this.pos[j0*this.cols+i0+1];
+    var c=this.pos[(j0+1)*this.cols+i0], d=this.pos[(j0+1)*this.cols+i0+1];
+    out.set(
+      (a.x*(1-fx)+b.x*fx)*(1-fy)+(c.x*(1-fx)+d.x*fx)*fy,
+      (a.y*(1-fx)+b.y*fx)*(1-fy)+(c.y*(1-fx)+d.y*fx)*fy,
+      (a.z*(1-fx)+b.z*fx)*(1-fy)+(c.z*(1-fx)+d.z*fx)*fy);
+    return out;
+  }
+};
+
+/* ── glyph placement ── */
+var _sp=new THREE.Vector3(), _u1=new THREE.Vector3(), _u0=new THREE.Vector3();
+var _v1=new THREE.Vector3(), _v0=new THREE.Vector3();
+var _t=new THREE.Vector3(), _b=new THREE.Vector3(), _n=new THREE.Vector3();
+var _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _qs=new THREE.Quaternion();
+var _s=new THREE.Vector3(), _z=new THREE.Vector3(0,0,1), _r=new THREE.Matrix4();
+function updatePattern(){
+  var e=0.5/Math.max(D,2), k=0, i, j, u, v;
+  for (j=0;j<D;j++){ v=D===1?0.5:j/(D-1);
+    for (i=0;i<D;i++){ u=D===1?0.5:i/(D-1);
+      cloth.sample(u,v,_sp);
+      cloth.sample(Math.min(u+e,1),v,_u1); cloth.sample(Math.max(u-e,0),v,_u0);
+      cloth.sample(u,Math.min(v+e,1),_v1); cloth.sample(u,Math.max(v-e,0),_v0);
+      _t.subVectors(_u1,_u0).normalize();
+      _n.crossVectors(_t,_v1.sub(_v0));
+      if (_n.lengthSq()<1e-10) _n.set(0,0,1); else _n.normalize().negate();
+      _b.crossVectors(_n,_t).normalize();
+      _r.makeBasis(_t,_b,_n);
+      _q.setFromRotationMatrix(_r);
+      if (PT.rotRandom>0){ _qs.setFromAxisAngle(_z,spin[k]*PT.rotRandom); _q.multiply(_qs); }
+      _s.setScalar(PT.size);
+      _m.compose(_sp,_q,_s);
+      pattern.setMatrixAt(k++,_m);
+    } }
+  pattern.instanceMatrix.needsUpdate=true;
+}
+
+/* ── loop: starts when visible, pauses off-screen, click replays ── */
+var playing=false, last=0, acc=0, simTime=0, FIXED=1/60;
+cloth.build();
+/* pre-settle: reduced-motion users get the FINAL composed frame,
+   everyone else gets a still cloth around the start keyframe */
+function warmSettle(){
+  if (!ANIM) return;
+  tweenCube(REDUCED ? 1 : 0);
+  for (var i=0;i<240;i++) cloth.step(FIXED, -(240-i)*FIXED);
+  for (i=0;i<cloth.pos.length;i++) cloth.prev[i].copy(cloth.pos[i]);
+}
+warmSettle();
+
+var textFade = (ANIM && !REDUCED) ? 0 : 1;
+var revealed = false;
+function revealHeroContent(){       // subtitle + CTAs enter after the title
+  if (revealed) return;
+  revealed = true;
+  document.querySelector('.hero-content').classList.add('revealed');
+}
+if (REDUCED) revealHeroContent();
+function applyTextFade(){
+  var show = TXT.visible && textFade > 0.01;
+  if (textMeshE){ textMatE.opacity = TXT.opacity*textFade; textMeshE.visible = show; }
+  if (contMeshE){ contMatE.opacity = TXT.cont.opacity*textFade; contMeshE.visible = show; }
+  if (textFade >= 1) revealHeroContent();
+}
+function render(){ applyTextFade(); updatePattern(); renderer.render(scene,cam); }
+
+/* cloth-area hover: the replay affordance lives on the cloth itself,
+   not the whole hero. The cloth's screen box is refreshed each frame. */
+var clothBox = { minX:0, minY:0, maxX:0, maxY:0 };
+var _bp = new THREE.Vector3();
+var BOX_SAMPLES = [[0,0],[0.5,0],[1,0],[0,0.5],[1,0.5],[0,1],[0.5,1],[1,1]];
+function updateClothBox(){
+  var w = host.clientWidth, h = host.clientHeight, PAD = 24;
+  var minX=1e9, minY=1e9, maxX=-1e9, maxY=-1e9;
+  for (var i=0;i<BOX_SAMPLES.length;i++){
+    cloth.sample(BOX_SAMPLES[i][0], BOX_SAMPLES[i][1], _bp)
+      .applyMatrix4(clothGroup.matrixWorld).project(cam);
+    var sx=( _bp.x*0.5+0.5)*w, sy=(-_bp.y*0.5+0.5)*h;
+    if (sx<minX)minX=sx; if (sx>maxX)maxX=sx;
+    if (sy<minY)minY=sy; if (sy>maxY)maxY=sy;
+  }
+  clothBox.minX=minX-PAD; clothBox.maxX=maxX+PAD;
+  clothBox.minY=minY-PAD; clothBox.maxY=maxY+PAD;
+}
+var heroContent = document.querySelector('.hero-content');
+var pointerPx = { x:-1, y:-1 };
+function overCloth(){
+  return pointerPx.x >= clothBox.minX && pointerPx.x <= clothBox.maxX &&
+         pointerPx.y >= clothBox.minY && pointerPx.y <= clothBox.maxY;
+}
+
+var mouse={x:0,y:0,active:false};
+var mOff=new THREE.Vector3(), mTarget=new THREE.Vector3();
+var lastActive = performance.now(), sleeping = false;
+host.addEventListener('pointermove', function(e){
+  var r=host.getBoundingClientRect();
+  pointerPx.x = e.clientX-r.left;
+  pointerPx.y = e.clientY-r.top;
+  mouse.x= ((e.clientX-r.left)/r.width)*2-1;
+  mouse.y=-(((e.clientY-r.top)/r.height)*2-1);
+  mouse.active=true;
+  lastActive = performance.now();
+  host.style.cursor = (!REDUCED && overCloth()) ? 'pointer' : 'default';
+});
+host.addEventListener('pointerleave', function(){
+  mouse.active=false; pointerPx.x=-1; pointerPx.y=-1;
+  host.style.cursor='default';
+});
+function mouseFollow(){
+  var K=STYLE.followK;
+  if (mouse.active){
+    var e=cam.matrixWorld.elements;
+    mTarget.set(e[0]*mouse.x+e[4]*mouse.y,
+                e[1]*mouse.x+e[5]*mouse.y,
+                e[2]*mouse.x+e[6]*mouse.y).multiplyScalar(K);
+  } else mTarget.set(0,0,0);
+  mOff.lerp(mTarget, 0.04);
+  var B=ANIM.b;
+  cubeGroup.position.set(B.px+mOff.x, B.py+mOff.y, B.pz+mOff.z);
+  cubeGroup.rotation.set(d2r(B.rx), d2r(B.ry), d2r(B.rz));
+  cubeGroup.scale.set(B.sx, B.sy, B.sz);
+  cubeGroup.updateMatrixWorld(true);
+}
+
+function frame(now){
+  requestAnimationFrame(frame);
+  if (!playing){ last=now; return; }
+  /* auto-sleep: once the animation is over, the text is in, and the
+     pointer has been idle a moment, freeze the sim completely — this
+     removes the micro-jitter of a solver that never quite converges.
+     Any pointer movement wakes it. Skipped when wind/turbulence are
+     set, since then the motion is intentional. */
+  var animDone = ANIM ? simTime >= ANIM.dur : simTime > 5;
+  if (animDone && textFade >= 1 &&
+      C.wind === 0 && C.turbulence === 0 &&
+      now - lastActive > 2000){
+    if (!sleeping){
+      sleeping = true;
+      for (var q=0; q<cloth.pos.length; q++) cloth.prev[q].copy(cloth.pos[q]);
+      render();
+    }
+    last = now; return;
+  }
+  sleeping = false;
+  var dtMs=Math.min(now-last,50); last=now; acc+=dtMs/1000;
+  while (acc>=FIXED){
+    simTime+=FIXED;
+    if (ANIM){
+      var t = Math.min(simTime/Math.max(ANIM.dur,0.1), 1);
+      if (t < 1) tweenCube((EASES[ANIM.ease]||EASES.easeInOut)(t));
+      else {
+        mouseFollow();
+        textFade = Math.min(1, textFade + FIXED/0.8);
+      }
+    }
+    cloth.step(FIXED,simTime);
+    /* post-animation velocity bleed: once the choreography is over,
+       drain residual solver oscillation every step so the pattern
+       rests instead of shimmering */
+    if (ANIM ? simTime >= ANIM.dur : simTime > 5){
+      for (var q2=0; q2<cloth.pos.length; q2++)
+        cloth.prev[q2].lerp(cloth.pos[q2], 0.15);
+    }
+    acc-=FIXED;
+  }
+  updateClothBox();
+  render();
+}
+requestAnimationFrame(frame);
+resize();
+updateClothBox();
+/* reduced motion: hold the final frame, never animate */
+if (!REDUCED){
+  if (window.IntersectionObserver){
+    new IntersectionObserver(function(en){ playing=en[0].isIntersecting; },
+      { threshold:0.15 }).observe(host);
+  } else playing=true;
+  host.addEventListener('click', function(){
+    if (!overCloth()) return;       // replay only from the cloth itself
+    cloth.build();
+    simTime = 0;
+    mOff.set(0,0,0);
+    textFade = ANIM ? 0 : 1;
+    warmSettle();
+  });
+}
+
+/* ══ HERO IMAGE EXPORT — high-res composite of the hero section:
+   the WebGL scene (pattern + 3D title/badge) rendered at ~3×, over
+   the page background, with the subtitle and (optionally) the CTA
+   pills redrawn from their exact live DOM geometry and styles. ══ */
+function exportHero(withCTAs){
+  var w = host.clientWidth || 300, h = host.clientHeight || 300;
+  var S = Math.min(3, 4200/Math.max(w, h));   // stay inside GPU limits
+
+  /* high-res pass of the 3D scene */
+  var prevPR = renderer.getPixelRatio();
+  renderer.setPixelRatio(S);
+  renderer.setSize(w, h, false);
+  render();
+  var out = document.createElement('canvas');
+  out.width = Math.round(w*S); out.height = Math.round(h*S);
+  var ctx = out.getContext('2d');
+  ctx.fillStyle = pal().paper;
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(renderer.domElement, 0, 0, out.width, out.height);
+  renderer.setPixelRatio(prevPR);
+  renderer.setSize(w, h, false);
+  render();                                    // restore live view
+
+  /* overlay: redraw DOM elements at scaled live coordinates */
+  var hostRect = host.getBoundingClientRect();
+  function rrPath(x, y, bw, bh, r){
+    if (ctx.roundRect){ ctx.roundRect(x, y, bw, bh, r); return; }
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+bw, y, x+bw, y+bh, r);
+    ctx.arcTo(x+bw, y+bh, x, y+bh, r);
+    ctx.arcTo(x, y+bh, x, y, r);
+    ctx.arcTo(x, y, x+bw, y, r);
+    ctx.closePath();
+  }
+  function setFont(cs){
+    ctx.font = cs.fontWeight + ' ' + (parseFloat(cs.fontSize)*S) + 'px ' + cs.fontFamily;
+    try { ctx.letterSpacing = ((parseFloat(cs.letterSpacing)||0)*S) + 'px'; } catch(e){}
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+  }
+  function label(el, cs){
+    var t = el.textContent.replace(/\s+/g,' ').trim();
+    return cs.textTransform === 'uppercase' ? t.toUpperCase() : t;
+  }
+  function drawTextEl(el){
+    var cs = getComputedStyle(el), r = el.getBoundingClientRect();
+    setFont(cs);
+    ctx.fillStyle = cs.color;
+    ctx.fillText(label(el, cs),
+      (r.left - hostRect.left + r.width/2)*S,
+      (r.top - hostRect.top + r.height/2)*S);
+  }
+  function drawBtn(el){
+    var cs = getComputedStyle(el), r = el.getBoundingClientRect();
+    var x = (r.left-hostRect.left)*S, y = (r.top-hostRect.top)*S;
+    var bw = r.width*S, bh = r.height*S, rad = bh/2;
+    ctx.beginPath();
+    rrPath(x, y, bw, bh, rad);
+    if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)'){
+      ctx.fillStyle = cs.backgroundColor;
+      ctx.fill();
+    }
+    var bwd = parseFloat(cs.borderTopWidth) || 0;
+    if (bwd > 0){
+      ctx.strokeStyle = cs.borderTopColor;
+      ctx.lineWidth = bwd*S;
+      ctx.stroke();
+    }
+    setFont(cs);
+    ctx.fillStyle = cs.color;
+    ctx.fillText(label(el, cs), x + bw/2, y + bh/2);
+  }
+  var kicker = document.querySelector('.hero-kicker');
+  if (kicker) drawTextEl(kicker);
+  if (withCTAs){
+    document.querySelectorAll('.hero-ctas a').forEach(drawBtn);
+  }
+
+  out.toBlob(function(blob){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'volumetric-thinking-hero.png';
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }, 'image/png');
+}
+
+/* ══ STYLE PANEL — tune the page live, save as default ══ */
+(function(){
+  var panel = document.getElementById('style-panel');
+  var btn = document.getElementById('style-btn');
+  function closePanel(){
+    panel.classList.remove('open');
+    btn.classList.remove('show');   // debug UI vanishes with the panel
+  }
+  btn.addEventListener('click', function(){
+    if (panel.classList.contains('open')) closePanel();
+    else panel.classList.add('open');
+  });
+  /* toggle: press * three times within 1.5s to open OR close */
+  var starCount = 0, starTimer = null;
+  window.addEventListener('keydown', function(e){
+    if (e.key !== '*') return;
+    starCount++;
+    clearTimeout(starTimer);
+    starTimer = setTimeout(function(){ starCount = 0; }, 1500);
+    if (starCount >= 3){
+      starCount = 0;
+      if (panel.classList.contains('open')) closePanel();
+      else { btn.classList.add('show'); panel.classList.add('open'); }
+    }
+  });
+
+  var head = document.createElement('div');
+  head.style.display='flex'; head.style.justifyContent='space-between';
+  head.style.alignItems='center';
+  var title = document.createElement('div');
+  title.className='sp-title'; title.textContent='Page style';
+  var close = document.createElement('button');
+  close.textContent='×';
+  close.style.cssText='background:none;border:none;color:#8a8a90;font-size:16px;'+
+    'cursor:pointer;padding:0 2px;line-height:1';
+  close.addEventListener('click', closePanel);
+  head.appendChild(title); head.appendChild(close);
+  panel.appendChild(head);
+
+  /* author photo picker, first control in the panel: stored in this
+     browser (localStorage) and shown immediately. For the deployed
+     site, also upload the jpg next to the page. */
+  var phWrap=document.createElement('div'); phWrap.className='sp-ctl';
+  var phBtn=document.createElement('button'); phBtn.textContent='Add author photo…';
+  var phInput=document.createElement('input');
+  phInput.type='file'; phInput.accept='image/*'; phInput.className='sp-file';
+  phBtn.addEventListener('click', function(){ phInput.click(); });
+  phInput.addEventListener('change', function(){
+    var f = phInput.files && phInput.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      window.setAuthorPhoto(reader.result);
+      phBtn.textContent = 'Photo saved ✓';
+      setTimeout(function(){ phBtn.textContent='Add author photo…'; }, 1800);
+    };
+    reader.readAsDataURL(f);
+  });
+  phWrap.appendChild(phBtn); phWrap.appendChild(phInput);
+  panel.appendChild(phWrap);
+
+  function colorCtl(label, key, onChange){
+    var w=document.createElement('div'); w.className='sp-ctl';
+    var l=document.createElement('label'); l.textContent=label;
+    var i=document.createElement('input'); i.type='color'; i.value=STYLE[key];
+    i.addEventListener('input', function(){ STYLE[key]=i.value; onChange(); });
+    w.appendChild(l); w.appendChild(i); panel.appendChild(w);
+  }
+  function rangeCtl(label, key, min, max, step, onChange){
+    var w=document.createElement('div'); w.className='sp-ctl';
+    var row=document.createElement('div'); row.className='sp-row';
+    var l=document.createElement('label'); l.textContent=label;
+    var v=document.createElement('span'); v.className='sp-val';
+    var show=function(){ v.textContent=(+STYLE[key]).toFixed(step<1?(step<0.01?3:2):0); };
+    show();
+    var i=document.createElement('input');
+    i.type='range'; i.min=min; i.max=max; i.step=step; i.value=STYLE[key];
+    i.addEventListener('input', function(){ STYLE[key]=+i.value; show(); onChange(); });
+    row.appendChild(l); row.appendChild(v);
+    w.appendChild(row); w.appendChild(i); panel.appendChild(w);
+  }
+
+  /* live apply hooks — colour changes route through the theme system
+     so the active palette (light or dark) always wins */
+  function applyPaper(){ applyTheme(); }
+  function applyInk(){ applyTheme(); }
+  function applyPattern(){ applyTheme(); }
+  function applySize(){ PT.size=STYLE.size; render(); }
+  function applyDur(){ if (ANIM) ANIM.dur=STYLE.animDur; }
+  function rebuildPatternLive(){
+    var newD = Math.round(STYLE.density);
+    if (window.innerWidth < 640) newD = Math.max(24, Math.round(newD*0.7));
+    clothGroup.remove(pattern);
+    pattern.geometry.dispose();
+    D = newD;
+    pattern = new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), mat, D*D);
+    pattern.frustumCulled = false;
+    clothGroup.add(pattern);
+    spin = new Float32Array(D*D);
+    var a=1337|0;
+    function r(){ a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }
+    for (var i=0;i<D*D;i++) spin[i]=(r()*2-1)*Math.PI;
+    render();
+  }
+
+  function applyTitle(){
+    textGroup.scale.set(STYLE.titleScale, STYLE.titleScale, STYLE.titleScale);
+    textGroup.updateMatrixWorld(true);
+    applyTheme();
+  }
+  function applyCalm(){ C.damping = STYLE.calm; }
+
+  colorCtl('page background · badge', 'paper', applyPaper);
+  colorCtl('ink', 'ink', applyInk);
+  colorCtl('soft ink', 'inkSoft', applyInk);
+  colorCtl('pattern colour', 'pattern', applyPattern);
+  colorCtl('dark · background · badge', 'darkPaper', applyTheme);
+  colorCtl('dark · ink', 'darkInk', applyTheme);
+  colorCtl('dark · soft ink', 'darkInkSoft', applyTheme);
+  colorCtl('dark · pattern', 'darkPattern', applyTheme);
+  colorCtl('dark · title', 'darkTitleColor', applyTheme);
+  rangeCtl('glyph size', 'size', 0.03, 0.25, 0.001, applySize);
+  rangeCtl('pattern density', 'density', 20, 90, 1, rebuildPatternLive);
+  colorCtl('title colour', 'titleColor', applyTitle);
+  rangeCtl('title size', 'titleScale', 0.04, 0.3, 0.002, applyTitle);
+  rangeCtl('subtitle size px', 'kickerSize', 9, 16, 0.5, applyPageStyle);
+  rangeCtl('subtitle letter spacing', 'kickerTrack', 0, 0.5, 0.01, applyPageStyle);
+  rangeCtl('cloth calm', 'calm', 0.02, 0.35, 0.005, applyCalm);
+  rangeCtl('animation duration s', 'animDur', 0.5, 6, 0.1, applyDur);
+  rangeCtl('cursor follow', 'followK', 0, 0.8, 0.01, function(){});
+  rangeCtl('reveal speed s', 'revealDur', 0.3, 2, 0.05, applyPageStyle);
+  rangeCtl('reveal distance px', 'revealDist', 0, 80, 1, applyPageStyle);
+  rangeCtl('reveal blur px', 'revealBlur', 0, 12, 0.5, applyPageStyle);
+  rangeCtl('reveal stagger s', 'revealStagger', 0, 0.3, 0.01, applyPageStyle);
+  rangeCtl('photo size px', 'photoScale', 160, 420, 5, applyPageStyle);
+  var reframe = function(){ applyPageStyle(); resize(); };
+  rangeCtl('pattern scale', 'patternZoom', 0.6, 1.6, 0.01, reframe);
+  rangeCtl('CTA gap · mobile px', 'ctaGapM', -40, 140, 2, reframe);
+  rangeCtl('CTA gap · tablet px', 'ctaGapT', -40, 140, 2, reframe);
+  rangeCtl('CTA gap · desktop px', 'ctaGapD', -40, 140, 2, reframe);
+  rangeCtl('pattern top gap px', 'navPad', 40, 160, 2, reframe);
+  rangeCtl('pattern width · mobile', 'patternRefM', 0.6, 1.4, 0.01, reframe);
+  rangeCtl('pattern width · narrow', 'patternRefW', 0.9, 1.6, 0.01, reframe);
+  rangeCtl('space below pattern px', 'heroExtra', 140, 400, 5, reframe);
+
+  /* hero image export: scene + subtitle, CTAs optional */
+  var exWrap=document.createElement('div'); exWrap.className='sp-ctl';
+  var cbRow=document.createElement('label');
+  cbRow.style.cssText='display:flex;align-items:center;gap:8px;cursor:pointer';
+  var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=true;
+  cb.style.cssText='width:13px;height:13px;accent-color:#c8f064;cursor:pointer';
+  var cbLab=document.createElement('label');
+  cbLab.textContent='include CTAs'; cbLab.style.cursor='pointer';
+  cbRow.appendChild(cb); cbRow.appendChild(cbLab);
+  var exBtn=document.createElement('button');
+  exBtn.textContent='Export hero image';
+  exBtn.addEventListener('click', function(){
+    exBtn.textContent='Rendering…';
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      exportHero(cb.checked);
+      exBtn.textContent='Export hero image';
+    }); });
+  });
+  exWrap.appendChild(cbRow); exWrap.appendChild(exBtn);
+  panel.appendChild(exWrap);
+  /* E key exports the hero image (honours the CTA checkbox) */
+  window.addEventListener('keydown', function(e){
+    if (e.key !== 'e' && e.key !== 'E') return;
+    if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    exBtn.click();
+  });
+  exBtn.title = 'Export hero image (E)';
+
+  var btns=document.createElement('div'); btns.className='sp-btns';
+  var save=document.createElement('button'); save.textContent='Save default';
+  save.addEventListener('click', function(){
+    try { localStorage.setItem(STYLE_KEY, JSON.stringify(STYLE));
+      save.textContent='Saved ✓'; }
+    catch(e){ save.textContent='Failed'; }
+    setTimeout(function(){ save.textContent='Save default'; }, 1400);
+  });
+  var reset=document.createElement('button'); reset.textContent='Reset';
+  reset.addEventListener('click', function(){
+    localStorage.removeItem(STYLE_KEY);
+    location.reload();
+  });
+  btns.appendChild(save); btns.appendChild(reset); panel.appendChild(btns);
+})();
+
+/* theme toggle: button + D key */
+document.getElementById('theme-btn').addEventListener('click', function(e){
+  e.stopPropagation();
+  window.toggleTheme();
+});
+window.addEventListener('keydown', function(e){
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'd' || e.key === 'D'){ window.toggleTheme(); return; }
+  var jump = { '1':'#book', '2':'#inside', '3':'#prints' }[e.key];
+  if (jump){
+    var el = document.querySelector(jump);
+    if (el) el.scrollIntoView({ behavior:'smooth' });
+  }
+});
+applyTheme();   // honour a saved dark default on load
+})();
+</script>
+</body>
+</html>
