@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Invisible Cloth Volume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ── THEME ─────────────────────────────────────────────────────────── */
+:root{
+  --bg-light:#eceae6;
+  --bg-dark:#0a0a0f;
+  --panel:#101014;
+  --panel-border:rgba(255,255,255,.07);
+  --ink:#e8e8e4;
+  --ink-dim:#8a8a90;
+  --accent:#c8f064;
+  --mono:'Space Mono',monospace;
+  --display:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg-light);
+  font-family:var(--mono);
+  transition:background .4s ease;
+}
+body.backdrop-dark{background:var(--bg-dark)}
+body.backdrop-checker{
+  background-color:#e4e2de;
+  background-image:
+    linear-gradient(45deg,#d6d4d0 25%,transparent 25%,transparent 75%,#d6d4d0 75%),
+    linear-gradient(45deg,#d6d4d0 25%,transparent 25%,transparent 75%,#d6d4d0 75%);
+  background-size:28px 28px;
+  background-position:0 0,14px 14px;
+}
+#canvas-wrap{position:fixed;inset:0}
+#canvas-wrap canvas{display:block;touch-action:none}
+
+/* ── TOP BAR ───────────────────────────────────────────────────────── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;pointer-events:none;z-index:10;
+}
+#topbar>*{pointer-events:auto}
+#title{
+  font-family:var(--display);font-weight:700;font-size:14px;
+  letter-spacing:.14em;text-transform:uppercase;color:#111;
+  display:flex;align-items:baseline;gap:12px;
+}
+body.backdrop-dark #title{color:var(--ink)}
+#title small{
+  font-family:var(--mono);font-weight:400;font-size:10px;
+  letter-spacing:.08em;color:rgba(0,0,0,.4);text-transform:none;
+}
+body.backdrop-dark #title small{color:var(--ink-dim)}
+#topbar-actions{display:flex;gap:8px;align-items:center}
+.bar-btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  background:#111;color:#eee;border:none;border-radius:999px;
+  padding:9px 18px;cursor:pointer;transition:opacity .25s ease,transform .15s ease;
+}
+.bar-btn:hover{opacity:.82}
+.bar-btn:active{transform:scale(.97)}
+.bar-btn.ghost{background:transparent;color:#111;border:1px solid rgba(0,0,0,.25)}
+body.backdrop-dark .bar-btn.ghost{color:var(--ink);border-color:rgba(255,255,255,.25)}
+body.backdrop-dark .bar-btn{background:var(--ink);color:#111}
+
+/* ── CONTROL PANEL ─────────────────────────────────────────────────── */
+#panel{
+  position:fixed;top:68px;right:16px;bottom:16px;width:264px;
+  background:var(--panel);border:1px solid var(--panel-border);
+  border-radius:14px;overflow-y:auto;overscroll-behavior:contain;
+  padding:6px 0 14px;z-index:9;color:var(--ink);
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+  box-shadow:0 12px 40px rgba(0,0,0,.18);
+}
+#panel::-webkit-scrollbar{width:4px}
+#panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+#panel details{border-bottom:1px solid var(--panel-border)}
+#panel details:last-child{border-bottom:none}
+#panel summary{
+  list-style:none;cursor:pointer;user-select:none;
+  padding:13px 18px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;
+  transition:color .2s;
+}
+#panel summary:hover{color:var(--ink)}
+#panel summary::-webkit-details-marker{display:none}
+#panel summary::after{content:'+';font-size:12px;color:var(--ink-dim)}
+#panel details[open] summary::after{content:'−'}
+.sec-body{padding:2px 18px 16px;display:flex;flex-direction:column;gap:11px}
+.ctl{display:flex;flex-direction:column;gap:5px}
+.ctl-row{display:flex;justify-content:space-between;align-items:baseline}
+.ctl label{font-size:10px;letter-spacing:.05em;color:var(--ink-dim)}
+.ctl .val{font-size:10px;color:var(--ink)}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:16px;background:transparent;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:rgba(255,255,255,.14);border-radius:1px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+  background:var(--ink);margin-top:-4.5px;transition:transform .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25)}
+input[type=range]::-moz-range-track{height:2px;background:rgba(255,255,255,.14)}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border:none;border-radius:50%;background:var(--ink)}
+input[type=text]{
+  font-family:var(--mono);font-size:16px;text-align:center;
+  background:rgba(255,255,255,.05);border:1px solid var(--panel-border);
+  border-radius:8px;color:var(--ink);padding:9px;width:100%;outline:none;
+  transition:border-color .2s;
+}
+input[type=text]:focus{border-color:rgba(255,255,255,.3)}
+input[type=color]{
+  -webkit-appearance:none;appearance:none;width:100%;height:28px;border:1px solid var(--panel-border);
+  border-radius:8px;background:transparent;cursor:pointer;padding:2px;
+}
+input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+input[type=color]::-webkit-color-swatch{border:none;border-radius:5px}
+input[type=number]{
+  font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.05);
+  border:1px solid var(--panel-border);border-radius:6px;color:var(--ink);
+  padding:6px 8px;width:100%;outline:none;
+}
+.toggle{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.toggle label{font-size:10px;letter-spacing:.05em;color:var(--ink-dim);cursor:pointer}
+.switch{
+  position:relative;width:30px;height:16px;border-radius:999px;
+  background:rgba(255,255,255,.12);transition:background .25s;flex-shrink:0;
+}
+.switch::after{
+  content:'';position:absolute;top:2.5px;left:3px;width:11px;height:11px;border-radius:50%;
+  background:var(--ink-dim);transition:transform .25s,background .25s;
+}
+.toggle input{display:none}
+.toggle input:checked+.switch{background:var(--accent)}
+.toggle input:checked+.switch::after{transform:translateX(13px);background:#111}
+.panel-btn{
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--panel-border);
+  border-radius:8px;padding:9px;cursor:pointer;transition:background .2s;width:100%;
+}
+.panel-btn:hover{background:rgba(255,255,255,.12)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:9px;line-height:1.5;color:var(--ink-dim);opacity:.7}
+.seg{display:flex;gap:4px}
+.seg button{
+  flex:1;font-family:var(--mono);font-size:9px;letter-spacing:.04em;
+  background:rgba(255,255,255,.05);color:var(--ink-dim);
+  border:1px solid var(--panel-border);border-radius:7px;
+  padding:7px 2px;cursor:pointer;transition:all .2s;
+}
+.seg button:hover{color:var(--ink)}
+.seg button.active{background:var(--ink);color:#111;border-color:var(--ink)}
+#panel summary .sum-label{flex:1}
+.sec-reset{
+  font-family:var(--mono);font-size:11px;background:none;border:none;
+  color:var(--ink-dim);opacity:0;cursor:pointer;padding:0 4px;
+  transition:opacity .2s,color .2s;line-height:1;
+}
+#panel summary:hover .sec-reset{opacity:.7}
+.sec-reset:hover{color:var(--accent);opacity:1!important}
+@media(max-width:640px){#panel{width:230px;top:60px}}
+</style>
+</head>
+<body>
+
+<div id="canvas-wrap"></div>
+
+<div id="topbar">
+  <div id="title">Invisible Cloth Volume <small id="glyph-readout">+</small></div>
+  <div id="topbar-actions">
+    <button class="bar-btn ghost" id="save-defaults-btn">Save defaults</button>
+    <button class="bar-btn" id="export-btn">Export PNG</button>
+  </div>
+</div>
+
+<div id="panel"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ════════════════════════════════════════════════════════════════════
+   PARAMS — single source of truth for every control
+   ════════════════════════════════════════════════════════════════════ */
+const P = {
+  // pattern
+  char:'+', density:52, charSize:0.075, charWeight:2,
+  rotRandom:0, opacity:1, color:'#000000',
+  // cloth sim
+  clothW:3, clothH:3, clothRes:36, stiffness:0.9, damping:0.015,
+  gravity:9.8, wind:0, turbulence:0, pinTop:true,
+  // cloth transform
+  cpx:0, cpy:0, cpz:0, crx:0, cry:0, crz:0, cscale:1,
+  // cube collider
+  // shape collider — sits mostly BEHIND the cloth plane so the
+  // nearest-surface push wraps the cloth forward, toward the camera
+  shape:'box',
+  bx:0, by:-0.15, bz:-0.15, brx:0, bry:0, brz:0,
+  bsx:1.5, bsy:1.5, bsz:1.0, softness:0.3, showDebug:false,
+  // text element — a visible extruded 3D text that also collides the
+  // cloth. Empty by default; type in the panel to add it.
+  text:'', tdepth:0.3, tvisible:true, tcolor:'#000000', topacity:1,
+  tweight:'bold',
+  tx:0, ty:-0.1, tz:-0.05, trx:0, try:0, trz:0,
+  tsx:1, tsy:1, tsz:1, tsoftness:0.3,
+  // text container — a rounded badge behind the text
+  tcontainer:false, tpad:0.25, tcorner:0.12,
+  tcontainerColor:'#ffffff', tcontainerOpacity:1,
+  // collider animation — two keyframes (start/end) for the shape
+  // collider's transform, played in the exported embed
+  kfA:null, kfB:null, animDur:3, animEase:'easeInOut',
+  // gizmos
+  gizmoCloth:false, gizmoShape:false, gizmoText:false, gizmoMode:'translate',
+  // export
+  exW:3000, exH:3000, exTransparent:true, exDebug:false,
+  exCrop:false, exPad:80, exPR:1,
+  _ortho:false,
+};
+
+/* ── saved defaults ──
+   "Save defaults" stores the whole parameter set (plus camera) in
+   localStorage; it's merged in here on load, and DEF is captured
+   AFTER the merge so section resets return to YOUR saved defaults. */
+const SAVE_KEY = 'icv-defaults-v1';
+let savedCam = null;
+try {
+  const saved = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+  if (saved && saved.p){
+    Object.assign(P, saved.p);
+    P.gizmoCloth = P.gizmoShape = P.gizmoText = false;   // never restore gizmos
+    savedCam = saved.cam || null;
+  }
+} catch(e){ /* corrupted save — ignore */ }
+const DEF = Object.assign({}, P);   // frozen defaults for per-section reset
+
+/* ════════════════════════════════════════════════════════════════════
+   RENDERER / SCENE / CAMERAS
+   preserveDrawingBuffer + alpha are required for transparent PNG export
+   ════════════════════════════════════════════════════════════════════ */
+const wrap = document.getElementById('canvas-wrap');
+const renderer = new THREE.WebGLRenderer({
+  antialias:true, alpha:true, preserveDrawingBuffer:true
+});
+renderer.setClearColor(0x000000, 0);            // transparent — no bg, ever
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+wrap.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();                 // no lights, no fog, no env
+
+const DEFAULT_CAM = { pos:new THREE.Vector3(2.1,1.5,4.4), target:new THREE.Vector3(0,-0.1,0.2) };
+const persp = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 100);
+const orthoSize = 2.4;
+const ortho = new THREE.OrthographicCamera(-1,1,1,-1,0.01,100);
+let camera = persp;
+let usingOrtho = false;
+
+function fitOrtho(aspect){
+  ortho.left = -orthoSize*aspect; ortho.right = orthoSize*aspect;
+  ortho.top = orthoSize; ortho.bottom = -orthoSize;
+  ortho.updateProjectionMatrix();
+}
+function resetCamera(){
+  camera.position.copy(DEFAULT_CAM.pos);
+  controls.target.copy(DEFAULT_CAM.target);
+  controls.update();
+}
+
+let controls = new THREE.OrbitControls(persp, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+persp.position.copy(DEFAULT_CAM.pos);
+controls.target.copy(DEFAULT_CAM.target);
+if (savedCam){                       // restore saved default camera
+  persp.position.fromArray(savedCam.pos);
+  controls.target.fromArray(savedCam.target);
+}
+controls.update();
+
+function switchCamera(toOrtho){
+  usingOrtho = toOrtho;
+  const oldPos = camera.position.clone();
+  const oldTarget = controls.target.clone();
+  controls.dispose();
+  camera = toOrtho ? ortho : persp;
+  camera.position.copy(oldPos);
+  if (toOrtho) fitOrtho(innerWidth/innerHeight);
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.copy(oldTarget);
+  controls.update();
+  gizmo.camera = camera;                       // keep gizmo bound to active cam
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TRANSFORM GIZMO — one TransformControls instance shared by the
+   cloth and the shape collider. Dragging writes the object transform
+   back into P and refreshes the matching sliders (syncFromGizmo,
+   hoisted from the UI section below). Never included in exports.
+   ════════════════════════════════════════════════════════════════════ */
+const gizmo = new THREE.TransformControls(camera, renderer.domElement);
+gizmo.setSize(0.85);
+scene.add(gizmo);
+gizmo.addEventListener('dragging-changed', e=> controls.enabled = !e.value);
+gizmo.addEventListener('objectChange', ()=> syncFromGizmo());
+
+function updateGizmo(){
+  gizmo.setMode(P.gizmoMode);
+  if (P.gizmoCloth) gizmo.attach(clothGroup);
+  else if (P.gizmoShape) gizmo.attach(cubeGroup);
+  else if (P.gizmoText) gizmo.attach(textGroup);
+  else gizmo.detach();
+}
+function exclusiveGizmo(active){   // only one gizmo target at a time
+  ['gizmoCloth','gizmoShape','gizmoText'].forEach(k=>{
+    if (k !== active && P[k]){ P[k] = false; refreshKey(k); }
+  });
+}
+
+window.addEventListener('resize', ()=>{
+  renderer.setSize(innerWidth, innerHeight);
+  persp.aspect = innerWidth/innerHeight;
+  persp.updateProjectionMatrix();
+  fitOrtho(innerWidth/innerHeight);
+});
+
+/* ════════════════════════════════════════════════════════════════════
+   CLOTH GROUP — the cloth transform lives here; the pattern
+   InstancedMesh is a child, so cloth position / rotation / scale
+   come for free on the rendered glyphs.
+   ════════════════════════════════════════════════════════════════════ */
+const clothGroup = new THREE.Group();
+scene.add(clothGroup);
+
+function applyClothTransform(){
+  clothGroup.position.set(P.cpx, P.cpy, P.cpz);
+  clothGroup.rotation.set(
+    THREE.MathUtils.degToRad(P.crx),
+    THREE.MathUtils.degToRad(P.cry),
+    THREE.MathUtils.degToRad(P.crz));
+  clothGroup.scale.setScalar(P.cscale);
+  clothGroup.updateMatrixWorld(true);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SHAPE COLLIDER — an oriented box / sphere / cylinder / cone, all
+   defined in a unit space (fits a 1×1×1 box) so position, rotation
+   and non-uniform scale come from the group matrix. The solid mesh is
+   never rendered; only faint debug edges can be shown, and those are
+   excluded from export unless "export debug" is on.
+   ════════════════════════════════════════════════════════════════════ */
+const cubeGroup = new THREE.Group();
+scene.add(cubeGroup);
+
+// debug visual: thin edges + a whisper of a wireframe surface
+const debugEdges = new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),
+  new THREE.LineBasicMaterial({ color:0x888888, transparent:true, opacity:0.5 }));
+const debugWire = new THREE.Mesh(
+  new THREE.BoxGeometry(1,1,1),
+  new THREE.MeshBasicMaterial({ color:0x888888, wireframe:true, transparent:true, opacity:0.08 }));
+cubeGroup.add(debugEdges, debugWire);
+
+function shapeGeometry(){
+  switch(P.shape){
+    case 'sphere':   return new THREE.SphereGeometry(0.5, 24, 16);
+    case 'cylinder': return new THREE.CylinderGeometry(0.5, 0.5, 1, 24);
+    case 'cone':     return new THREE.ConeGeometry(0.5, 1, 24);
+    default:         return new THREE.BoxGeometry(1,1,1);
+  }
+}
+function updateShapeDebug(){
+  const g = shapeGeometry();
+  debugEdges.geometry.dispose();
+  debugEdges.geometry = new THREE.EdgesGeometry(g, 30);
+  debugWire.geometry.dispose();
+  debugWire.geometry = g;
+}
+
+function applyCubeTransform(){
+  cubeGroup.position.set(P.bx, P.by, P.bz);
+  cubeGroup.rotation.set(
+    THREE.MathUtils.degToRad(P.brx),
+    THREE.MathUtils.degToRad(P.bry),
+    THREE.MathUtils.degToRad(P.brz));
+  cubeGroup.scale.set(P.bsx, P.bsy, P.bsz);
+  cubeGroup.updateMatrixWorld(true);
+  cubeGroup.visible = P.showDebug;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   COLLIDER ANIMATION — two keyframes (start → end) for the shape
+   collider's position / rotation / scale. The editor can preview the
+   tween live (cloth reacts in real time); the exported embed plays
+   the same tween with the same easing on page load / replay.
+   ════════════════════════════════════════════════════════════════════ */
+const EASES = {
+  linear:   t=> t,
+  easeOut:  t=> 1 - Math.pow(1-t, 3),
+  easeInOut:t=> t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2
+};
+function captureKeyframe(){
+  return { px:P.bx, py:P.by, pz:P.bz, rx:P.brx, ry:P.bry, rz:P.brz,
+           sx:P.bsx, sy:P.bsy, sz:P.bsz };
+}
+function applyKeyframe(k){    // push a keyframe back into the sliders
+  P.bx=k.px; P.by=k.py; P.bz=k.pz; P.brx=k.rx; P.bry=k.ry; P.brz=k.rz;
+  P.bsx=k.sx; P.bsy=k.sy; P.bsz=k.sz;
+  ['bx','by','bz','brx','bry','brz','bsx','bsy','bsz'].forEach(refreshKey);
+  applyCubeTransform();
+}
+const _lerp = (a,b,t)=> a + (b-a)*t;
+function tweenCube(t){        // set collider transform between kfA and kfB
+  const A = P.kfA, B = P.kfB;
+  cubeGroup.position.set(_lerp(A.px,B.px,t), _lerp(A.py,B.py,t), _lerp(A.pz,B.pz,t));
+  cubeGroup.rotation.set(
+    THREE.MathUtils.degToRad(_lerp(A.rx,B.rx,t)),
+    THREE.MathUtils.degToRad(_lerp(A.ry,B.ry,t)),
+    THREE.MathUtils.degToRad(_lerp(A.rz,B.rz,t)));
+  cubeGroup.scale.set(_lerp(A.sx,B.sx,t), _lerp(A.sy,B.sy,t), _lerp(A.sz,B.sz,t));
+  cubeGroup.updateMatrixWorld(true);
+}
+let previewing = false, previewT = 0;
+function playPreview(){
+  if (!P.kfA || !P.kfB) return;
+  cloth.reset();
+  tweenCube(0);               // collider at the start keyframe…
+  for (let i=0; i<240; i++)   // …cloth pre-settled around it, so the
+    cloth.step(1/60, -(240-i)/60);   // animation is purely the tween
+  for (let i=0; i<cloth.pos.length; i++)
+    cloth.prev[i].copy(cloth.pos[i]);      // kill velocity: dead still at start
+  previewT = 0;
+  previewing = true;
+  textFade = 0;               // text (+ container) fades in at the end frame
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TEXT ELEMENT — extruded 3D text that behaves like the shape
+   collider (move / rotate / scale, gizmo, soft collision) but is
+   VISIBLE, rendered flat (no lights) so it reads as a graphic mark.
+   ────────────────────────────────────────────────────────────────────
+   Collision uses a 2D distance field of the exact font outlines:
+   the glyph shapes are rasterised into an offscreen mask, a chamfer
+   distance transform gives "depth inside the letterform" per cell,
+   and each cloth particle inside the extruded volume is pushed out
+   through whichever is nearer — the front/back face (z) or the
+   letter's side wall (xy, along the distance-field gradient). So the
+   cloth wraps real letterforms, not a bounding box.
+   ════════════════════════════════════════════════════════════════════ */
+const textGroup = new THREE.Group();
+scene.add(textGroup);
+const textMat = new THREE.MeshBasicMaterial({
+  color:P.tcolor, transparent:true, opacity:P.topacity
+});
+const textMesh = new THREE.Mesh(new THREE.BufferGeometry(), textMat);
+textMesh.visible = false;
+textGroup.add(textMesh);
+
+// container: rounded badge slab behind the text, same extrusion depth,
+// set back a hair so the text face sits proud of it
+const containerMat = new THREE.MeshBasicMaterial({
+  color:P.tcontainerColor, transparent:true, opacity:P.tcontainerOpacity
+});
+let containerMesh = null;
+let textBaseVisible = false;   // visibility before fade is applied
+let textFade = 1;              // 0→1 soft fade, driven by the animation
+
+let font = null;          // active typeface (regular/bold), loaded from CDN
+let textSDF = null;       // distance field for collision (null = no text)
+const FONT_URLS = {
+  regular:'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json',
+  bold:'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json'
+};
+const fonts = {};
+function loadTextFont(){
+  const w = P.tweight;
+  if (fonts[w]){ font = fonts[w]; rebuildText(); return; }
+  new THREE.FontLoader().load(FONT_URLS[w], f=>{
+    fonts[w] = f;
+    if (P.tweight === w){ font = f; rebuildText(); }
+  });
+}
+loadTextFont();
+
+function roundedRectShape(hw, hh, r){
+  r = Math.max(Math.min(r, Math.min(hw,hh)-0.001), 0.0001);
+  const s = new THREE.Shape();
+  s.moveTo(-hw+r,-hh);
+  s.lineTo( hw-r,-hh); s.absarc( hw-r,-hh+r, r, -Math.PI/2, 0, false);
+  s.lineTo( hw, hh-r); s.absarc( hw-r, hh-r, r, 0, Math.PI/2, false);
+  s.lineTo(-hw+r, hh); s.absarc(-hw+r, hh-r, r, Math.PI/2, Math.PI, false);
+  s.lineTo(-hw,-hh+r); s.absarc(-hw+r,-hh+r, r, Math.PI, 1.5*Math.PI, false);
+  return s;
+}
+
+function applyTextTransform(){
+  textGroup.position.set(P.tx, P.ty, P.tz);
+  textGroup.rotation.set(
+    THREE.MathUtils.degToRad(P.trx),
+    THREE.MathUtils.degToRad(P.try),
+    THREE.MathUtils.degToRad(P.trz));
+  textGroup.scale.set(P.tsx, P.tsy, P.tsz);
+  textGroup.updateMatrixWorld(true);
+}
+
+function rebuildText(){
+  const str = (P.text || '').trim();
+  if (containerMesh){
+    textGroup.remove(containerMesh);
+    containerMesh.geometry.dispose();
+    containerMesh = null;
+  }
+  if (!font || !str){ textBaseVisible = false; textMesh.visible = false; textSDF = null; return; }
+  const depth = Math.max(P.tdepth, 0.02);
+  const geo = new THREE.TextGeometry(str, {
+    font, size:1, height:depth, curveSegments:6, bevelEnabled:false
+  });
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox;
+  const cx = (bb.min.x+bb.max.x)/2, cy = (bb.min.y+bb.max.y)/2, cz = (bb.min.z+bb.max.z)/2;
+  geo.translate(-cx, -cy, -cz);                 // centre in local space
+  textMesh.geometry.dispose();
+  textMesh.geometry = geo;
+  textBaseVisible = P.tvisible;
+
+  if (P.tcontainer){
+    /* rounded badge: text bbox + padding, extruded to the same depth,
+       nudged back so the text face sits proud. Collision switches to
+       an ANALYTIC rounded-rect field — the cloth wraps the badge. */
+    const hw = (bb.max.x-bb.min.x)/2 + P.tpad;
+    const hh = (bb.max.y-bb.min.y)/2 + P.tpad;
+    const r  = Math.max(Math.min(P.tcorner, Math.min(hw,hh)-0.001), 0.0001);
+    const cgeo = new THREE.ExtrudeGeometry(roundedRectShape(hw,hh,r),
+      { depth, bevelEnabled:false, curveSegments:8 });
+    cgeo.translate(0, 0, -depth/2 - 0.02);
+    containerMesh = new THREE.Mesh(cgeo, containerMat);
+    textGroup.add(containerMesh);
+    textSDF = {
+      hx:hw, hy:hh, hd:depth/2, r, cell:0.02, cx:0, cy:0,
+      at(x, y){          // inside-depth of the rounded rect (0 = outside)
+        if (Math.abs(x) >= this.hx || Math.abs(y) >= this.hy) return 0;
+        const qx = Math.abs(x) - (this.hx - this.r);
+        const qy = Math.abs(y) - (this.hy - this.r);
+        const sd = (qx > 0 && qy > 0)
+          ? Math.hypot(qx, qy) - this.r
+          : Math.max(qx, qy) - this.r;
+        return Math.max(0, -sd);
+      }
+    };
+  } else {
+    buildTextSDF(str, bb.max.x-bb.min.x, bb.max.y-bb.min.y, depth, cx, cy);
+  }
+}
+
+function buildTextSDF(str, w, h, depth, cx, cy){
+  const hx = w/2, hy = h/2, hd = depth/2;
+  const W = 192;
+  const H = Math.min(384, Math.max(24, Math.round(W*h/w)));
+  const cellX = w/W, cellY = h/H;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d', { willReadFrequently:true });
+  // map centred local coords → pixels (canvas y is flipped)
+  ctx.setTransform(1/cellX, 0, 0, -1/cellY, hx/cellX, hy/cellY);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  const shapes = font.generateShapes(str, 1);   // exact glyph outlines
+  const trace = pts=>{
+    pts.forEach((p,i)=> i ? ctx.lineTo(p.x-cx, p.y-cy) : ctx.moveTo(p.x-cx, p.y-cy));
+    ctx.closePath();
+  };
+  shapes.forEach(sh=>{
+    trace(sh.getPoints(12));
+    (sh.holes||[]).forEach(hole=> trace(hole.getPoints(12)));
+  });
+  ctx.fill('evenodd');                          // holes stay empty
+
+  const img = ctx.getImageData(0,0,W,H).data;
+  // two-pass chamfer distance transform: depth-inside-letter per cell
+  const INF = 1e9;
+  const dist = new Float32Array(W*H);
+  for (let i=0; i<W*H; i++) dist[i] = img[i*4+3] > 127 ? INF : 0;
+  const D2 = Math.SQRT2;
+  for (let y=0; y<H; y++) for (let x=0; x<W; x++){
+    const k = y*W+x; let d = dist[k];
+    if (x>0)          d = Math.min(d, dist[k-1]+1);
+    if (y>0){         d = Math.min(d, dist[k-W]+1);
+      if (x>0)        d = Math.min(d, dist[k-W-1]+D2);
+      if (x<W-1)      d = Math.min(d, dist[k-W+1]+D2); }
+    dist[k] = d;
+  }
+  for (let y=H-1; y>=0; y--) for (let x=W-1; x>=0; x--){
+    const k = y*W+x; let d = dist[k];
+    if (x<W-1)        d = Math.min(d, dist[k+1]+1);
+    if (y<H-1){       d = Math.min(d, dist[k+W]+1);
+      if (x<W-1)      d = Math.min(d, dist[k+W+1]+D2);
+      if (x>0)        d = Math.min(d, dist[k+W-1]+D2); }
+    dist[k] = d;
+  }
+
+  const cell = Math.min(cellX, cellY);
+  textSDF = {
+    W, H, dist, hx, hy, hd, cellX, cellY, cell, cx, cy,
+    at(x, y){          // depth inside the letterform, local units; 0 = outside
+      const i = Math.floor((x + this.hx)/this.cellX);
+      const j = Math.floor((this.hy - y)/this.cellY);
+      if (i<0 || j<0 || i>=this.W || j>=this.H) return 0;
+      return this.dist[j*this.W + i] * this.cell;
+    }
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CLOTH SIMULATION — Verlet integration
+   ────────────────────────────────────────────────────────────────────
+   • Particles live in CLOTH-LOCAL space (so moving/rotating the cloth
+     group doesn't disturb the sim — world forces are rotated in).
+   • Constraints: structural (grid neighbours), shear (diagonals),
+     bend (skip-one) — each solved with position projection, several
+     iterations per frame for stability.
+   • Cube collision: each particle is mapped world → cube-local space.
+     If it's inside the unit box it's pushed to the NEAREST FACE, then
+     mapped back. The push is lerped by "softness" so the cloth wraps
+     gently instead of snapping.
+   ════════════════════════════════════════════════════════════════════ */
+const cloth = {
+  cols:0, rows:0, pos:[], prev:[], pinned:[], pinPos:[], constraints:[],
+
+  build(){
+    const segs = Math.round(P.clothRes);
+    this.cols = segs+1; this.rows = segs+1;
+    this.pos = []; this.prev = []; this.pinned = []; this.pinPos = [];
+    const w = P.clothW, h = P.clothH;
+    for (let j=0; j<this.rows; j++){
+      for (let i=0; i<this.cols; i++){
+        // row 0 = top edge; cloth hangs down through y
+        const x = (i/(this.cols-1) - 0.5) * w;
+        const y = (0.5 - j/(this.rows-1)) * h;
+        const p = new THREE.Vector3(x, y, 0);
+        this.pos.push(p);
+        this.prev.push(p.clone());
+        const pin = (j===0);
+        this.pinned.push(pin);
+        this.pinPos.push(p.clone());
+      }
+    }
+    this.buildConstraints();
+  },
+
+  buildConstraints(){
+    this.constraints = [];
+    const idx = (i,j)=> j*this.cols + i;
+    const add = (a,b)=> this.constraints.push([a, b, this.pos[a].distanceTo(this.pos[b])]);
+    for (let j=0; j<this.rows; j++){
+      for (let i=0; i<this.cols; i++){
+        if (i < this.cols-1) add(idx(i,j), idx(i+1,j));          // structural →
+        if (j < this.rows-1) add(idx(i,j), idx(i,j+1));          // structural ↓
+        if (i < this.cols-1 && j < this.rows-1){                 // shear ⤡ ⤢
+          add(idx(i,j),   idx(i+1,j+1));
+          add(idx(i+1,j), idx(i,j+1));
+        }
+        if (i < this.cols-2) add(idx(i,j), idx(i+2,j));          // bend →
+        if (j < this.rows-2) add(idx(i,j), idx(i,j+2));          // bend ↓
+      }
+    }
+  },
+
+  reset(){ this.build(); },
+
+  step(dt, time){
+    const n = this.pos.length;
+
+    // World forces rotated into cloth-local space (gravity is world-down,
+    // wind is world-z), then divided by uniform scale so units stay local.
+    const qInv = clothGroup.quaternion.clone().invert();
+    const s = Math.max(P.cscale, 1e-4);
+    const gLocal = new THREE.Vector3(0,-P.gravity,0).applyQuaternion(qInv).divideScalar(s);
+    const windLocal = new THREE.Vector3(
+      Math.sin(time*0.6)*0.35, 0, 1
+    ).applyQuaternion(qInv).multiplyScalar(P.wind/s);
+
+    const keep = 1 - P.damping;    // velocity retention
+    const dt2 = dt*dt;
+    const tmp = new THREE.Vector3();
+
+    /* ── Verlet integration ── */
+    for (let k=0; k<n; k++){
+      if (this.pinned[k] && P.pinTop) continue;
+      const p = this.pos[k], pp = this.prev[k];
+      tmp.subVectors(p, pp).multiplyScalar(keep);      // damped velocity
+      pp.copy(p);
+      p.add(tmp);
+      p.x += (gLocal.x + windLocal.x) * dt2;
+      p.y += (gLocal.y + windLocal.y) * dt2;
+      p.z += (gLocal.z + windLocal.z) * dt2;
+      if (P.turbulence > 0){                            // cheap coherent noise
+        const t3 = time*1.7;
+        p.x += Math.sin(p.y*3.1 + t3)       * P.turbulence*0.15*dt2*60;
+        p.z += Math.cos(p.x*2.7 + t3*1.31)  * P.turbulence*0.35*dt2*60;
+      }
+    }
+
+    /* ── Constraint relaxation + collision, several iterations ── */
+    const ITER = 5;
+    const k = P.stiffness * 0.5;   // half-correction per endpoint, scaled
+    for (let it=0; it<ITER; it++){
+      for (let c=0; c<this.constraints.length; c++){
+        const [a,b,rest] = this.constraints[c];
+        const pa = this.pos[a], pb = this.pos[b];
+        tmp.subVectors(pb, pa);
+        const d = tmp.length();
+        if (d === 0) continue;
+        const diff = (d - rest)/d * k;
+        const pinA = this.pinned[a] && P.pinTop;
+        const pinB = this.pinned[b] && P.pinTop;
+        if (!pinA && !pinB){
+          pa.addScaledVector(tmp,  diff);
+          pb.addScaledVector(tmp, -diff);
+        } else if (pinA && !pinB){
+          pb.addScaledVector(tmp, -diff*2);
+        } else if (!pinA && pinB){
+          pa.addScaledVector(tmp,  diff*2);
+        }
+      }
+      this.collideShape();
+      this.collideText();
+      if (P.pinTop) for (let q=0; q<n; q++) if (this.pinned[q]) this.pos[q].copy(this.pinPos[q]);
+    }
+  },
+
+  /* Oriented-shape collision: particle → world → shape-local unit
+     space (position/rotation/scale all live in the group matrix, so
+     one inverse transform handles every orientation). Inside the
+     volume, the particle is pushed to the nearest point on the
+     surface, then lerped by "softness" for a gentle wrap. A small
+     "skin" keeps glyphs from z-fighting the surface. */
+  _clothInv:new THREE.Matrix4(), _cubeInv:new THREE.Matrix4(), _cv:new THREE.Vector3(),
+  collideShape(){
+    clothGroup.updateMatrixWorld(true);
+    cubeGroup.updateMatrixWorld(true);
+    const clothMat = clothGroup.matrixWorld;
+    const clothInv = this._clothInv.copy(clothMat).invert();
+    const cubeMat  = cubeGroup.matrixWorld;
+    const cubeInv  = this._cubeInv.copy(cubeMat).invert();
+    const HALF = 0.5, SKIN = 0.02;
+    const v = this._cv;
+    const shape = P.shape;
+    for (let i=0; i<this.pos.length; i++){
+      const p = this.pos[i];
+      v.copy(p).applyMatrix4(clothMat).applyMatrix4(cubeInv);   // → shape local
+      let hit = false;
+
+      if (shape === 'box'){
+        if (Math.abs(v.x) < HALF && Math.abs(v.y) < HALF && Math.abs(v.z) < HALF){
+          // push through the face with least penetration
+          const dx = HALF - Math.abs(v.x);
+          const dy = HALF - Math.abs(v.y);
+          const dz = HALF - Math.abs(v.z);
+          if (dx <= dy && dx <= dz)      v.x = Math.sign(v.x || 1) * (HALF + SKIN);
+          else if (dy <= dx && dy <= dz) v.y = Math.sign(v.y || 1) * (HALF + SKIN);
+          else                           v.z = Math.sign(v.z || 1) * (HALF + SKIN);
+          hit = true;
+        }
+      } else if (shape === 'sphere'){
+        const d = v.length();
+        if (d < HALF){
+          if (d < 1e-6) v.set(0, HALF + SKIN, 0);      // dead centre: pick up
+          else v.multiplyScalar((HALF + SKIN)/d);      // radial push-out
+          hit = true;
+        }
+      } else if (shape === 'cylinder'){                // axis = local Y
+        const r = Math.hypot(v.x, v.z);
+        if (r < HALF && Math.abs(v.y) < HALF){
+          const dRad = HALF - r, dCap = HALF - Math.abs(v.y);
+          if (dCap <= dRad){                           // nearer to a cap
+            v.y = Math.sign(v.y || 1) * (HALF + SKIN);
+          } else {                                     // nearer to the wall
+            const s = (HALF + SKIN)/Math.max(r, 1e-6);
+            v.x *= s; v.z *= s;
+          }
+          hit = true;
+        }
+      } else if (shape === 'cone'){                    // apex +Y, base −Y
+        if (v.y > -HALF && v.y < HALF){
+          const R = (HALF - v.y) * 0.5;                // surface radius at y
+          const r = Math.hypot(v.x, v.z);
+          if (r < R){
+            const dBase = v.y + HALF;
+            const dLat  = (R - r) * 0.894;             // ≈ cos(slope angle)
+            if (dBase <= dLat || r < 1e-6){            // nearer to the base
+              v.y = -(HALF + SKIN);
+            } else {                                   // push to slant surface
+              const s = (R + SKIN)/r;
+              v.x *= s; v.z *= s;
+            }
+            hit = true;
+          }
+        }
+      }
+
+      if (hit){
+        v.applyMatrix4(cubeMat).applyMatrix4(clothInv);         // → cloth local
+        p.lerp(v, P.softness);
+      }
+    }
+  },
+
+  /* Text collision: particle → text-local space, then a distance-field
+     lookup. Inside the extruded letterform, push out through whichever
+     is nearer — front/back face (z) or the letter's side wall (along
+     the field gradient in xy). */
+  _textInv:new THREE.Matrix4(),
+  collideText(){
+    if (!textSDF) return;
+    clothGroup.updateMatrixWorld(true);
+    textGroup.updateMatrixWorld(true);
+    const clothMat = clothGroup.matrixWorld;
+    const clothInv = this._clothInv.copy(clothMat).invert();
+    const tMat = textGroup.matrixWorld;
+    const tInv = this._textInv.copy(tMat).invert();
+    const S = textSDF, SKIN = 0.02;
+    const v = this._cv;
+    for (let i=0; i<this.pos.length; i++){
+      const p = this.pos[i];
+      v.copy(p).applyMatrix4(clothMat).applyMatrix4(tInv);      // → text local
+      if (Math.abs(v.z) >= S.hd || Math.abs(v.x) >= S.hx || Math.abs(v.y) >= S.hy) continue;
+      const d = S.at(v.x, v.y);                 // depth inside letter (xy)
+      if (d <= 0) continue;
+      const zPen = S.hd - Math.abs(v.z);        // depth inside extrusion (z)
+      if (zPen <= d){
+        v.z = Math.sign(v.z || 1) * (S.hd + SKIN);
+      } else {
+        const e = S.cell;                       // gradient points inward
+        let gx = S.at(v.x+e, v.y) - S.at(v.x-e, v.y);
+        let gy = S.at(v.x, v.y+e) - S.at(v.x, v.y-e);
+        const gl = Math.hypot(gx, gy);
+        if (gl < 1e-6){                         // flat plateau: fall back to z
+          v.z = Math.sign(v.z || 1) * (S.hd + SKIN);
+        } else {
+          gx/=gl; gy/=gl;
+          v.x -= gx*(d + SKIN);                 // walk out through the wall
+          v.y -= gy*(d + SKIN);
+        }
+      }
+      v.applyMatrix4(tMat).applyMatrix4(clothInv);              // → cloth local
+      p.lerp(v, P.tsoftness);
+    }
+  },
+
+  /* Bilinear sample of the particle grid at (u,v) ∈ [0,1]² —
+     lets pattern density be independent of sim resolution. */
+  sample(u, v, out){
+    const x = u*(this.cols-1), y = v*(this.rows-1);
+    const i0 = Math.min(Math.floor(x), this.cols-2);
+    const j0 = Math.min(Math.floor(y), this.rows-2);
+    const fx = x-i0, fy = y-j0;
+    const a = this.pos[j0*this.cols+i0],     b = this.pos[j0*this.cols+i0+1];
+    const c = this.pos[(j0+1)*this.cols+i0], d = this.pos[(j0+1)*this.cols+i0+1];
+    out.set(
+      (a.x*(1-fx)+b.x*fx)*(1-fy) + (c.x*(1-fx)+d.x*fx)*fy,
+      (a.y*(1-fx)+b.y*fx)*(1-fy) + (c.y*(1-fx)+d.y*fx)*fy,
+      (a.z*(1-fx)+b.z*fx)*(1-fy) + (c.z*(1-fx)+d.z*fx)*fy);
+    return out;
+  }
+};
+
+/* ════════════════════════════════════════════════════════════════════
+   GLYPH TEXTURE — the character is drawn once to an offscreen canvas
+   (white on transparent), used as an alpha-tested map on instanced
+   planes. White × material.color = final colour, so tinting is free.
+   "Weight" strokes the glyph outline for a continuous weight feel.
+   ════════════════════════════════════════════════════════════════════ */
+const glyphCanvas = document.createElement('canvas');
+glyphCanvas.width = glyphCanvas.height = 512;
+const glyphTex = new THREE.CanvasTexture(glyphCanvas);
+glyphTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+glyphTex.minFilter = THREE.LinearMipmapLinearFilter;
+
+function redrawGlyph(){
+  const ctx = glyphCanvas.getContext('2d');
+  ctx.clearRect(0,0,512,512);
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '400 340px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  ctx.lineJoin = 'round';
+  const ch = P.char || '+';
+  ctx.fillText(ch, 256, 276);
+  if (P.charWeight > 0){
+    ctx.lineWidth = P.charWeight * 4;
+    ctx.strokeText(ch, 256, 276);
+  }
+  glyphTex.needsUpdate = true;
+  document.getElementById('glyph-readout').textContent = ch;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PATTERN — one InstancedMesh of tiny planes. Each instance:
+   • position  = bilinear cloth sample (density × density grid)
+   • rotation  = basis built from local tangent + normal, so glyphs
+                 lie flat on the cloth and tilt with the deformation
+   • extra     = per-instance random spin about the normal (slider)
+   The cloth itself is NEVER given a mesh — only these glyphs render.
+   ════════════════════════════════════════════════════════════════════ */
+const glyphMat = new THREE.MeshBasicMaterial({
+  map:glyphTex, side:THREE.DoubleSide,
+  transparent:true, alphaTest:0.35, depthWrite:true,
+  color:new THREE.Color(P.color), opacity:P.opacity
+});
+let pattern = null;
+let instanceSpin = [];   // per-instance random angle, regenerated on density change
+
+// seeded PRNG so the pattern's random spins are deterministic — the
+// exported embed uses the same seed and reproduces the app exactly
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a>>>15, 1 | a);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+
+function buildPattern(){
+  if (pattern){
+    clothGroup.remove(pattern);
+    pattern.geometry.dispose();
+  }
+  const D = Math.round(P.density);
+  const count = D*D;
+  pattern = new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), glyphMat, count);
+  pattern.frustumCulled = false;
+  clothGroup.add(pattern);
+  instanceSpin = new Float32Array(count);
+  const rnd = mulberry32(1337);
+  for (let i=0; i<count; i++) instanceSpin[i] = (rnd()*2-1)*Math.PI;
+}
+
+const _sp  = new THREE.Vector3(), _su1 = new THREE.Vector3(), _su0 = new THREE.Vector3();
+const _sv1 = new THREE.Vector3(), _sv0 = new THREE.Vector3();
+const _t   = new THREE.Vector3(), _bt  = new THREE.Vector3(), _n = new THREE.Vector3();
+const _m   = new THREE.Matrix4(), _q   = new THREE.Quaternion(), _qs = new THREE.Quaternion();
+const _sc  = new THREE.Vector3(), _z   = new THREE.Vector3(0,0,1);
+const _rot = new THREE.Matrix4();
+
+function updatePattern(){
+  const D = Math.round(P.density);
+  const e = 0.5/Math.max(D,2);         // finite-difference step for normals
+  let k = 0;
+  for (let j=0; j<D; j++){
+    const v = D===1 ? 0.5 : j/(D-1);
+    for (let i=0; i<D; i++){
+      const u = D===1 ? 0.5 : i/(D-1);
+      cloth.sample(u, v, _sp);
+      cloth.sample(Math.min(u+e,1), v, _su1);  cloth.sample(Math.max(u-e,0), v, _su0);
+      cloth.sample(u, Math.min(v+e,1), _sv1);  cloth.sample(u, Math.max(v-e,0), _sv0);
+      _t.subVectors(_su1, _su0).normalize();               // tangent (u)
+      _n.crossVectors(_t, _sv1.sub(_sv0));                 // normal (unnormalised)
+      if (_n.lengthSq() < 1e-10) _n.set(0,0,1);            // degenerate guard
+      else _n.normalize().negate();
+      _bt.crossVectors(_n, _t).normalize();                // bitangent
+      _rot.makeBasis(_t, _bt, _n);
+      _q.setFromRotationMatrix(_rot);
+      if (P.rotRandom > 0){
+        _qs.setFromAxisAngle(_z, instanceSpin[k]*P.rotRandom);
+        _q.multiply(_qs);
+      }
+      _sc.setScalar(P.charSize);
+      _m.compose(_sp, _q, _sc);
+      pattern.setMatrixAt(k++, _m);
+    }
+  }
+  pattern.instanceMatrix.needsUpdate = true;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PNG EXPORT — temporarily resize the renderer to the export
+   resolution, render once with debug hidden (unless export-debug is
+   on), read the canvas, optionally crop to the pattern's screen
+   bounds + padding, download, then restore everything.
+   ════════════════════════════════════════════════════════════════════ */
+function computePatternScreenBounds(w, h){
+  // project every glyph sample point; grow by an approximate projected
+  // glyph radius so marks at the edge aren't clipped
+  clothGroup.updateMatrixWorld(true);
+  const D = Math.round(P.density);
+  const pt = new THREE.Vector3();
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  const fovScale = usingOrtho
+    ? h / (ortho.top - ortho.bottom)
+    : h / (2*Math.tan(THREE.MathUtils.degToRad(persp.fov/2)));
+  const addPoint = (r)=>{
+    const dist = usingOrtho ? 1 : pt.distanceTo(camera.position);
+    pt.project(camera);
+    const sx = ( pt.x*0.5 + 0.5) * w;
+    const sy = (-pt.y*0.5 + 0.5) * h;
+    const rr = r * fovScale / dist;
+    minX = Math.min(minX, sx-rr); maxX = Math.max(maxX, sx+rr);
+    minY = Math.min(minY, sy-rr); maxY = Math.max(maxY, sy+rr);
+  };
+  for (let j=0; j<D; j++){
+    const v = D===1?0.5:j/(D-1);
+    for (let i=0; i<D; i++){
+      const u = D===1?0.5:i/(D-1);
+      cloth.sample(u, v, pt).applyMatrix4(clothGroup.matrixWorld);
+      addPoint(P.charSize * P.cscale * 0.8);
+    }
+  }
+  // visible 3D text is part of the artwork — include its bounds too
+  if (textMesh.visible && textSDF){
+    textGroup.updateMatrixWorld(true);
+    for (const sx of [-1,1]) for (const sy of [-1,1]) for (const sz of [-1,1]){
+      pt.set(sx*textSDF.hx, sy*textSDF.hy, sz*textSDF.hd)
+        .applyMatrix4(textGroup.matrixWorld);
+      addPoint(0);
+    }
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+function exportPNG(){
+  const btn = document.getElementById('export-btn');
+  btn.textContent = 'Rendering…';
+
+  // defer one frame so the button label paints before the heavy render
+  requestAnimationFrame(()=> requestAnimationFrame(()=>{
+    const W = Math.max(16, Math.round(P.exW));
+    const H = Math.max(16, Math.round(P.exH));
+    const PR = P.exPR;
+
+    /* remember interactive state */
+    const prevPR = renderer.getPixelRatio();
+    const prevSize = new THREE.Vector2();
+    renderer.getSize(prevSize);
+    const prevDebug = cubeGroup.visible;
+    const prevAspect = persp.aspect;
+    const prevFov = persp.fov;
+
+    /* configure for export — the exported frame must CONTAIN exactly
+       what the canvas shows. Vertical FOV normally defines framing;
+       if the export is narrower (in aspect) than the screen, widen
+       the vertical FOV so the on-screen horizontal extent still fits.
+       The view direction and orbit target are untouched. */
+    const screenAspect = prevSize.x / prevSize.y;
+    const exportAspect = W / H;
+    cubeGroup.visible = P.exDebug;                       // debug only if asked
+    const prevGizmo = gizmo.visible;
+    gizmo.visible = false;                               // never export the gizmo
+    if (exportAspect < screenAspect){
+      const t = Math.tan(THREE.MathUtils.degToRad(prevFov/2)) * screenAspect/exportAspect;
+      persp.fov = 2 * THREE.MathUtils.radToDeg(Math.atan(t));
+    }
+    persp.aspect = exportAspect; persp.updateProjectionMatrix();
+    {   // ortho: match on-screen vertical extent, contain horizontal
+      const halfH = orthoSize * Math.max(1, screenAspect/exportAspect);
+      ortho.top = halfH; ortho.bottom = -halfH;
+      ortho.left = -halfH*exportAspect; ortho.right = halfH*exportAspect;
+      ortho.updateProjectionMatrix();
+    }
+    renderer.setClearColor(0xffffff, P.exTransparent ? 0 : 1);
+
+    /* render in TILES at the final resolution — a single giant buffer
+       can exceed GPU limits (which clips silently at high pixel
+       ratios), so the frame is assembled from ≤2048px passes using
+       camera.setViewOffset. Pixel ratio purely scales resolution;
+       framing, aspect and composition are identical at any ratio. */
+    const fullW = Math.round(W*PR), fullH = Math.round(H*PR);
+    const full = document.createElement('canvas');
+    full.width = fullW; full.height = fullH;
+    const fctx = full.getContext('2d');
+    if (!P.exTransparent){ fctx.fillStyle='#fff'; fctx.fillRect(0,0,fullW,fullH); }
+    const TILE = 2048;
+    renderer.setPixelRatio(1);
+    for (let ty=0; ty<fullH; ty+=TILE){
+      for (let tx=0; tx<fullW; tx+=TILE){
+        const tw = Math.min(TILE, fullW-tx), th = Math.min(TILE, fullH-ty);
+        camera.setViewOffset(fullW, fullH, tx, ty, tw, th);
+        renderer.setSize(tw, th, false);
+        renderer.render(scene, camera);
+        fctx.drawImage(renderer.domElement, 0, 0, tw, th, tx, ty, tw, th);
+      }
+    }
+    camera.clearViewOffset();
+
+    /* optionally crop to pattern bounds + padding */
+    let out = full;
+    if (P.exCrop){
+      const bb = computePatternScreenBounds(fullW, fullH);
+      const pad = P.exPad * PR;
+      const x0 = Math.max(0, Math.floor(bb.minX - pad));
+      const y0 = Math.max(0, Math.floor(bb.minY - pad));
+      const x1 = Math.min(fullW, Math.ceil(bb.maxX + pad));
+      const y1 = Math.min(fullH, Math.ceil(bb.maxY + pad));
+      out = document.createElement('canvas');
+      out.width = Math.max(1, x1-x0); out.height = Math.max(1, y1-y0);
+      const octx = out.getContext('2d');
+      if (!P.exTransparent){ octx.fillStyle='#fff'; octx.fillRect(0,0,out.width,out.height); }
+      octx.drawImage(full, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    }
+
+    /* restore interactive state */
+    renderer.setPixelRatio(prevPR);
+    renderer.setSize(prevSize.x, prevSize.y, false);
+    renderer.setClearColor(0x000000, 0);
+    persp.fov = prevFov;
+    persp.aspect = prevAspect; persp.updateProjectionMatrix();
+    fitOrtho(prevSize.x/prevSize.y);
+    cubeGroup.visible = prevDebug && P.showDebug;
+    gizmo.visible = prevGizmo;
+
+    out.toBlob(blob=>{
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'invisible-cloth-volume-pattern.png';
+      a.click();
+      setTimeout(()=> URL.revokeObjectURL(a.href), 4000);
+      btn.textContent = 'Export PNG';
+    }, 'image/png');
+  }));
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SVG EXPORT — true vector output for print. Each glyph becomes a
+   <text> element with an affine matrix built from its projected quad
+   (position, orientation, perspective scale all preserved); the 3D
+   text element's front-face outlines become a <path> from the exact
+   font shapes. Painter-sorted far → near. Pixel ratio is irrelevant
+   for vectors, so it is ignored here.
+   ════════════════════════════════════════════════════════════════════ */
+function exportSVG(){
+  const W = Math.max(16, Math.round(P.exW));
+  const H = Math.max(16, Math.round(P.exH));
+
+  /* same contain-framing as the PNG export; restored afterwards */
+  const prevSize = new THREE.Vector2(); renderer.getSize(prevSize);
+  const screenAspect = prevSize.x/prevSize.y, exportAspect = W/H;
+  const prevFov = persp.fov, prevAspect = persp.aspect;
+  if (exportAspect < screenAspect){
+    const t = Math.tan(THREE.MathUtils.degToRad(prevFov/2)) * screenAspect/exportAspect;
+    persp.fov = 2 * THREE.MathUtils.radToDeg(Math.atan(t));
+  }
+  persp.aspect = exportAspect; persp.updateProjectionMatrix();
+  {
+    const hh = orthoSize * Math.max(1, screenAspect/exportAspect);
+    ortho.top = hh; ortho.bottom = -hh;
+    ortho.left = -hh*exportAspect; ortho.right = hh*exportAspect;
+    ortho.updateProjectionMatrix();
+  }
+
+  clothGroup.updateMatrixWorld(true);
+  const wm = clothGroup.matrixWorld;
+  const esc = s=> s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                   .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const items = [];
+  let bMinX=Infinity, bMinY=Infinity, bMaxX=-Infinity, bMaxY=-Infinity;
+  const pv = new THREE.Vector3();
+  const projectPoint = (v3, o)=>{        // world → svg px + NDC depth
+    pv.copy(v3).project(camera);
+    o.x = ( pv.x*0.5 + 0.5) * W;
+    o.y = (-pv.y*0.5 + 0.5) * H;
+    o.z = pv.z;
+  };
+  const grow = (x,y,r)=>{
+    bMinX=Math.min(bMinX,x-r); bMaxX=Math.max(bMaxX,x+r);
+    bMinY=Math.min(bMinY,y-r); bMaxY=Math.max(bMaxY,y+r);
+  };
+
+  /* glyphs — identical sampling + orientation to the live pattern */
+  const D = Math.round(P.density);
+  const e = 0.5/Math.max(D,2);
+  const pC=new THREE.Vector3(), pX=new THREE.Vector3(), pY=new THREE.Vector3();
+  const sC={}, sX={}, sY={};
+  const ch = esc(P.char || '+');
+  let k = 0;
+  for (let j=0; j<D; j++){
+    const v = D===1?0.5:j/(D-1);
+    for (let i=0; i<D; i++){
+      const u = D===1?0.5:i/(D-1);
+      cloth.sample(u, v, _sp);
+      cloth.sample(Math.min(u+e,1), v, _su1);  cloth.sample(Math.max(u-e,0), v, _su0);
+      cloth.sample(u, Math.min(v+e,1), _sv1);  cloth.sample(u, Math.max(v-e,0), _sv0);
+      _t.subVectors(_su1,_su0).normalize();
+      _n.crossVectors(_t, _sv1.sub(_sv0));
+      if (_n.lengthSq()<1e-10) _n.set(0,0,1); else _n.normalize().negate();
+      _bt.crossVectors(_n,_t).normalize();
+      _rot.makeBasis(_t,_bt,_n);
+      _q.setFromRotationMatrix(_rot);
+      if (P.rotRandom>0){ _qs.setFromAxisAngle(_z, instanceSpin[k]*P.rotRandom); _q.multiply(_qs); }
+      _sc.setScalar(P.charSize);
+      _m.compose(_sp,_q,_sc);
+      pC.set(0,0,0).applyMatrix4(_m).applyMatrix4(wm);
+      pX.set(0.5,0,0).applyMatrix4(_m).applyMatrix4(wm);
+      pY.set(0,0.5,0).applyMatrix4(_m).applyMatrix4(wm);
+      projectPoint(pC,sC); projectPoint(pX,sX); projectPoint(pY,sY);
+      // affine matrix from projected quad axes; local y negated so
+      // SVG's y-down text space matches the quad's up direction
+      const a  =  2*(sX.x-sC.x), b  =  2*(sX.y-sC.y);
+      const c  = -2*(sY.x-sC.x), d2 = -2*(sY.y-sC.y);
+      grow(sC.x, sC.y, (Math.hypot(a,b)+Math.hypot(c,d2))/2);
+      items.push({ depth:sC.z,
+        svg:`<text transform="matrix(${a.toFixed(3)} ${b.toFixed(3)} ${c.toFixed(3)} ${d2.toFixed(3)} ${sC.x.toFixed(2)} ${sC.y.toFixed(2)})" dy="0.24">${ch}</text>` });
+      k++;
+    }
+  }
+
+  /* visible 3D text → exact front-face outline paths */
+  if (textBaseVisible && textSDF && font){
+    textGroup.updateMatrixWorld(true);
+    const tm = textGroup.matrixWorld;
+    const tp = new THREE.Vector3(), so = {};
+    const tracer = (zLocal)=>{           // path tracer at a given local depth
+      const state = { dSum:0, dN:0, d:'' };
+      state.trace = pts=>{
+        let s='';
+        pts.forEach((p,i)=>{
+          tp.set(p.x, p.y, zLocal).applyMatrix4(tm);
+          projectPoint(tp, so);
+          state.dSum += so.z; state.dN++;
+          grow(so.x, so.y, 0);
+          s += (i?'L':'M') + so.x.toFixed(2) + ' ' + so.y.toFixed(2);
+        });
+        state.d += s + 'Z';
+      };
+      return state;
+    };
+    // container badge first (renders behind the text glyphs)
+    if (P.tcontainer && containerMesh){
+      const st = tracer(textSDF.hd - 0.02);
+      st.trace(roundedRectShape(textSDF.hx, textSDF.hy, textSDF.r).getPoints(16));
+      items.push({ depth: st.dSum/Math.max(st.dN,1) + 0.0005,   // just behind text
+        svg:`<path d="${st.d}" fill="${P.tcontainerColor}" fill-opacity="${P.tcontainerOpacity}" stroke="none"/>` });
+    }
+    const st = tracer(textSDF.hd);
+    const shapes = font.generateShapes((P.text||'').trim(), 1);
+    // glyph shapes are uncentred — recompute the centring offset
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    shapes.forEach(sh=> sh.getPoints(12).forEach(p=>{
+      minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x);
+      minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y);
+    }));
+    const ox=(minX+maxX)/2, oy=(minY+maxY)/2;
+    const shift = pts=> pts.map(p=>({ x:p.x-ox, y:p.y-oy }));
+    shapes.forEach(sh=>{
+      st.trace(shift(sh.getPoints(12)));
+      (sh.holes||[]).forEach(hh=> st.trace(shift(hh.getPoints(12))));
+    });
+    if (st.d) items.push({ depth: st.dSum/Math.max(st.dN,1),
+      svg:`<path d="${st.d}" fill="${P.tcolor}" fill-opacity="${P.topacity}" fill-rule="evenodd" stroke="none"/>` });
+  }
+
+  items.sort((A,B)=> B.depth - A.depth);   // far → near, painter's order
+
+  /* frame: full canvas, or crop to content + padding (in px units) */
+  let vx=0, vy=0, vw=W, vh=H;
+  if (P.exCrop && isFinite(bMinX)){
+    const pad = P.exPad;
+    vx = Math.max(0, Math.floor(bMinX-pad));
+    vy = Math.max(0, Math.floor(bMinY-pad));
+    vw = Math.min(W, Math.ceil(bMaxX+pad)) - vx;
+    vh = Math.min(H, Math.ceil(bMaxY+pad)) - vy;
+  }
+  // glyph metrics chosen to match the canvas texture (340px em / 512px quad)
+  const strokeAttr = P.charWeight > 0
+    ? ` stroke="${P.color}" stroke-width="${(P.charWeight*4/512).toFixed(4)}" stroke-opacity="${P.opacity}" stroke-linejoin="round"`
+    : '';
+  const svg =
+`<svg xmlns="http://www.w3.org/2000/svg" width="${vw}" height="${vh}" viewBox="${vx} ${vy} ${vw} ${vh}">
+${P.exTransparent ? '' : `<rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="#ffffff"/>
+`}<g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="0.66" text-anchor="middle" fill="${P.color}" fill-opacity="${P.opacity}"${strokeAttr}>
+${items.map(it=> it.svg).join('\n')}
+</g>
+</svg>`;
+
+  /* restore camera */
+  persp.fov = prevFov; persp.aspect = prevAspect; persp.updateProjectionMatrix();
+  fitOrtho(prevSize.x/prevSize.y);
+
+  const blob = new Blob([svg], { type:'image/svg+xml' });
+  const aEl = document.createElement('a');
+  aEl.href = URL.createObjectURL(blob);
+  aEl.download = 'invisible-cloth-volume-pattern.svg';
+  aEl.click();
+  setTimeout(()=> URL.revokeObjectURL(aEl.href), 4000);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   EMBED EXPORT — packages the CURRENT state (pattern, cloth, collider,
+   text, camera) with a minimal self-contained runtime into one HTML
+   file for a landing page. The embed replays the drop animation:
+   the cloth starts flat, falls, and drapes over the hidden collider.
+   No UI, transparent background, starts when scrolled into view,
+   pauses off-screen, click to replay. Same seeded RNG as the app, so
+   the settled pattern matches what you tuned here.
+   ════════════════════════════════════════════════════════════════════ */
+function buildEmbedHTML(){
+  const cfg = {
+    pattern:{ char:P.char||'+', density:Math.round(P.density), size:P.charSize,
+      weight:P.charWeight, rotRandom:P.rotRandom, opacity:P.opacity, color:P.color },
+    cloth:{ w:P.clothW, h:P.clothH, res:Math.round(P.clothRes), stiffness:P.stiffness,
+      damping:P.damping, gravity:P.gravity, wind:P.wind, turbulence:P.turbulence,
+      pinTop:P.pinTop },
+    clothT:{ px:P.cpx, py:P.cpy, pz:P.cpz, rx:P.crx, ry:P.cry, rz:P.crz, s:P.cscale },
+    shape:{ kind:P.shape, px:P.bx, py:P.by, pz:P.bz, rx:P.brx, ry:P.bry, rz:P.brz,
+      sx:P.bsx, sy:P.bsy, sz:P.bsz, softness:P.softness },
+    text:{ str:(P.text||'').trim(), depth:P.tdepth, visible:P.tvisible,
+      color:P.tcolor, opacity:P.topacity, weight:P.tweight,
+      cont: P.tcontainer
+        ? { pad:P.tpad, corner:P.tcorner, color:P.tcontainerColor, opacity:P.tcontainerOpacity }
+        : null,
+      px:P.tx, py:P.ty, pz:P.tz, rx:P.trx, ry:P.try, rz:P.trz,
+      sx:P.tsx, sy:P.tsy, sz:P.tsz, softness:P.tsoftness },
+    camera:{ pos:camera.position.toArray(), target:controls.target.toArray(),
+      fov:persp.fov, ortho:!!P._ortho, zoom:ortho.zoom, orthoSize },
+    // keyframed collider animation (null → static collider, cloth-drop only)
+    anim: (P.kfA && P.kfB)
+      ? { a:P.kfA, b:P.kfB, dur:P.animDur, ease:P.animEase }
+      : null
+  };
+  const json = JSON.stringify(cfg).replace(/</g,'\\u003c');  // script-safe
+  return EMBED_TEMPLATE.replace('"__CFG__"', json);
+}
+
+function exportEmbed(){
+  const blob = new Blob([buildEmbedHTML()], { type:'text/html' });
+  const aEl = document.createElement('a');
+  aEl.href = URL.createObjectURL(blob);
+  aEl.download = 'invisible-cloth-volume-embed.html';
+  aEl.click();
+  setTimeout(()=> URL.revokeObjectURL(aEl.href), 4000);
+}
+
+/* Open the embed in a new tab to watch the drop animation with the
+   current settings — same HTML the download produces. The blob URL is
+   kept alive so the preview tab can be reloaded. */
+function previewEmbed(){
+  const blob = new Blob([buildEmbedHTML()], { type:'text/html' });
+  window.open(URL.createObjectURL(blob), '_blank');
+}
+
+/* The embed runtime: same Verlet cloth, collisions, and instanced
+   glyph pattern as the app, minus UI/export. Kept in one template so
+   the exported file is fully standalone (Three.js from CDN). */
+const EMBED_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invisible Cloth Volume</title>
+<!--
+  HOW TO EMBED
+  • iframe:  <iframe src="invisible-cloth-volume-embed.html"
+               style="width:600px;height:600px;border:0;background:transparent"><\\/iframe>
+  • inline:  copy the #icv div and both script tags into your page.
+  Behaviour: transparent background · animation (cloth drop) starts when
+  scrolled into view · pauses off-screen · click to replay.
+-->
+<style>
+html,body{margin:0;height:100%;background:transparent;overflow:hidden}
+#icv{width:100%;height:100%;cursor:pointer}
+#icv canvas{display:block}
+</style>
+</head>
+<body>
+<div id="icv"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+<script>
+(function(){
+'use strict';
+var CFG = "__CFG__";
+
+/* ── stage ── */
+var host = document.getElementById('icv');
+var renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+host.appendChild(renderer.domElement);
+var scene = new THREE.Scene();
+
+var cam;
+if (CFG.camera.ortho){
+  cam = new THREE.OrthographicCamera(-1,1,1,-1,0.01,100);
+  cam.zoom = CFG.camera.zoom;
+} else {
+  cam = new THREE.PerspectiveCamera(CFG.camera.fov, 1, 0.1, 100);
+}
+cam.position.fromArray(CFG.camera.pos);
+cam.lookAt(new THREE.Vector3().fromArray(CFG.camera.target));
+
+function resize(){
+  var w = host.clientWidth || 300, h = host.clientHeight || 300, a = w/h;
+  renderer.setSize(w, h);
+  if (CFG.camera.ortho){
+    var s = CFG.camera.orthoSize;
+    cam.left=-s*a; cam.right=s*a; cam.top=s; cam.bottom=-s;
+  } else cam.aspect = a;
+  cam.updateProjectionMatrix();
+  render();
+}
+if (window.ResizeObserver) new ResizeObserver(resize).observe(host);
+window.addEventListener('resize', resize);
+
+var d2r = function(d){ return d*Math.PI/180; };
+var clothGroup = new THREE.Group(); scene.add(clothGroup);
+clothGroup.position.set(CFG.clothT.px, CFG.clothT.py, CFG.clothT.pz);
+clothGroup.rotation.set(d2r(CFG.clothT.rx), d2r(CFG.clothT.ry), d2r(CFG.clothT.rz));
+clothGroup.scale.setScalar(CFG.clothT.s);
+var cubeGroup = new THREE.Group(); scene.add(cubeGroup);   // invisible collider
+cubeGroup.position.set(CFG.shape.px, CFG.shape.py, CFG.shape.pz);
+cubeGroup.rotation.set(d2r(CFG.shape.rx), d2r(CFG.shape.ry), d2r(CFG.shape.rz));
+cubeGroup.scale.set(CFG.shape.sx, CFG.shape.sy, CFG.shape.sz);
+var textGroup = new THREE.Group(); scene.add(textGroup);
+textGroup.position.set(CFG.text.px, CFG.text.py, CFG.text.pz);
+textGroup.rotation.set(d2r(CFG.text.rx), d2r(CFG.text.ry), d2r(CFG.text.rz));
+textGroup.scale.set(CFG.text.sx, CFG.text.sy, CFG.text.sz);
+clothGroup.updateMatrixWorld(true);
+cubeGroup.updateMatrixWorld(true);
+textGroup.updateMatrixWorld(true);
+
+/* ── keyframed collider animation (start → end, eased) ── */
+var ANIM = CFG.anim;
+var EASES = {
+  linear: function(t){ return t; },
+  easeOut: function(t){ return 1 - Math.pow(1-t, 3); },
+  easeInOut: function(t){ return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+};
+function lerp(a,b,t){ return a + (b-a)*t; }
+function tweenCube(t){
+  var A = ANIM.a, B = ANIM.b;
+  cubeGroup.position.set(lerp(A.px,B.px,t), lerp(A.py,B.py,t), lerp(A.pz,B.pz,t));
+  cubeGroup.rotation.set(d2r(lerp(A.rx,B.rx,t)), d2r(lerp(A.ry,B.ry,t)), d2r(lerp(A.rz,B.rz,t)));
+  cubeGroup.scale.set(lerp(A.sx,B.sx,t), lerp(A.sy,B.sy,t), lerp(A.sz,B.sz,t));
+  cubeGroup.updateMatrixWorld(true);
+}
+if (ANIM) tweenCube(0);   // start at the start keyframe
+
+/* ── glyph texture ── */
+var PT = CFG.pattern;
+var gc = document.createElement('canvas'); gc.width = gc.height = 512;
+(function(){
+  var ctx = gc.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.strokeStyle='#fff';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineJoin='round';
+  ctx.font = '400 340px "Helvetica Neue", Helvetica, Arial, sans-serif';
+  ctx.fillText(PT.char, 256, 276);
+  if (PT.weight > 0){ ctx.lineWidth = PT.weight*4; ctx.strokeText(PT.char, 256, 276); }
+})();
+var tex = new THREE.CanvasTexture(gc);
+tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+var mat = new THREE.MeshBasicMaterial({ map:tex, side:THREE.DoubleSide,
+  transparent:true, alphaTest:0.35, color:new THREE.Color(PT.color), opacity:PT.opacity });
+var D = PT.density;
+var pattern = new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), mat, D*D);
+pattern.frustumCulled = false;
+clothGroup.add(pattern);
+var spin = new Float32Array(D*D);
+(function(){ // same seeded PRNG as the editor → identical spins
+  var a = 1337|0;
+  function r(){ a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }
+  for (var i=0;i<D*D;i++) spin[i]=(r()*2-1)*Math.PI;
+})();
+
+/* ── optional visible 3D text (+ rounded container badge) ── */
+var TXT = CFG.text, textSDF = null;
+var textMeshE = null, textMatE = null, contMeshE = null, contMatE = null;
+if (TXT.str){
+  new THREE.FontLoader().load(
+    TXT.weight === 'regular'
+      ? 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_regular.typeface.json'
+      : 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/fonts/helvetiker_bold.typeface.json',
+    function(font){
+      var depth = Math.max(TXT.depth, 0.02);
+      var geo = new THREE.TextGeometry(TXT.str, { font:font, size:1, height:depth,
+        curveSegments:6, bevelEnabled:false });
+      geo.computeBoundingBox();
+      var bb = geo.boundingBox;
+      var cx=(bb.min.x+bb.max.x)/2, cy=(bb.min.y+bb.max.y)/2, cz=(bb.min.z+bb.max.z)/2;
+      geo.translate(-cx,-cy,-cz);
+      textMatE = new THREE.MeshBasicMaterial({
+        color:TXT.color, transparent:true, opacity:TXT.opacity });
+      textMeshE = new THREE.Mesh(geo, textMatE);
+      textMeshE.visible = false;   // the fade/visibility gate shows it
+      textGroup.add(textMeshE);
+      var w=bb.max.x-bb.min.x, h=bb.max.y-bb.min.y;
+      var hx=w/2, hy=h/2, hd=depth/2;
+
+      if (TXT.cont){
+        /* rounded container badge; collision becomes an analytic
+           rounded-rect field so the cloth wraps the badge */
+        var hw2=hx+TXT.cont.pad, hh2=hy+TXT.cont.pad;
+        var rr=Math.max(Math.min(TXT.cont.corner, Math.min(hw2,hh2)-0.001), 0.0001);
+        var rs=new THREE.Shape();
+        rs.moveTo(-hw2+rr,-hh2);
+        rs.lineTo( hw2-rr,-hh2); rs.absarc( hw2-rr,-hh2+rr, rr, -Math.PI/2, 0, false);
+        rs.lineTo( hw2, hh2-rr); rs.absarc( hw2-rr, hh2-rr, rr, 0, Math.PI/2, false);
+        rs.lineTo(-hw2+rr, hh2); rs.absarc(-hw2+rr, hh2-rr, rr, Math.PI/2, Math.PI, false);
+        rs.lineTo(-hw2,-hh2+rr); rs.absarc(-hw2+rr,-hh2+rr, rr, Math.PI, 1.5*Math.PI, false);
+        var cgeo=new THREE.ExtrudeGeometry(rs,{depth:depth,bevelEnabled:false,curveSegments:8});
+        cgeo.translate(0,0,-depth/2-0.02);
+        contMatE=new THREE.MeshBasicMaterial({
+          color:TXT.cont.color, transparent:true, opacity:TXT.cont.opacity });
+        contMeshE=new THREE.Mesh(cgeo, contMatE);
+        contMeshE.visible=false;
+        textGroup.add(contMeshE);
+        textSDF={ hx:hw2, hy:hh2, hd:hd, r:rr, cell:0.02,
+          at:function(px,py){
+            if (Math.abs(px)>=this.hx||Math.abs(py)>=this.hy) return 0;
+            var qx=Math.abs(px)-(this.hx-this.r), qy=Math.abs(py)-(this.hy-this.r);
+            var sd=(qx>0&&qy>0)? Math.sqrt(qx*qx+qy*qy)-this.r : Math.max(qx,qy)-this.r;
+            return Math.max(0,-sd); } };
+        if (simTime===0) warmSettle();
+        render();
+        return;               // analytic field replaces the chamfer build
+      }
+      var W=192, H=Math.min(384, Math.max(24, Math.round(W*h/w)));
+      var cellX=w/W, cellY=h/H;
+      var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+      var ctx=cv.getContext('2d');
+      ctx.setTransform(1/cellX,0,0,-1/cellY,hx/cellX,hy/cellY);
+      ctx.fillStyle='#fff'; ctx.beginPath();
+      var shapes=font.generateShapes(TXT.str,1);
+      var trace=function(pts){ pts.forEach(function(p,i){
+        i? ctx.lineTo(p.x-cx,p.y-cy) : ctx.moveTo(p.x-cx,p.y-cy); }); ctx.closePath(); };
+      shapes.forEach(function(sh){ trace(sh.getPoints(12));
+        (sh.holes||[]).forEach(function(hh){ trace(hh.getPoints(12)); }); });
+      ctx.fill('evenodd');
+      var img=ctx.getImageData(0,0,W,H).data, INF=1e9, R2=Math.SQRT2;
+      var dist=new Float32Array(W*H);
+      for (var i=0;i<W*H;i++) dist[i]= img[i*4+3]>127 ? INF : 0;
+      var x,y,kk,d;
+      for (y=0;y<H;y++) for (x=0;x<W;x++){ kk=y*W+x; d=dist[kk];
+        if (x>0) d=Math.min(d,dist[kk-1]+1);
+        if (y>0){ d=Math.min(d,dist[kk-W]+1);
+          if (x>0) d=Math.min(d,dist[kk-W-1]+R2);
+          if (x<W-1) d=Math.min(d,dist[kk-W+1]+R2); }
+        dist[kk]=d; }
+      for (y=H-1;y>=0;y--) for (x=W-1;x>=0;x--){ kk=y*W+x; d=dist[kk];
+        if (x<W-1) d=Math.min(d,dist[kk+1]+1);
+        if (y<H-1){ d=Math.min(d,dist[kk+W]+1);
+          if (x<W-1) d=Math.min(d,dist[kk+W+1]+R2);
+          if (x>0) d=Math.min(d,dist[kk+W-1]+R2); }
+        dist[kk]=d; }
+      var cell=Math.min(cellX,cellY);
+      textSDF={ W:W,H:H,dist:dist,hx:hx,hy:hy,hd:hd,cellX:cellX,cellY:cellY,cell:cell,
+        at:function(px,py){
+          var ii=Math.floor((px+this.hx)/this.cellX);
+          var jj=Math.floor((this.hy-py)/this.cellY);
+          if (ii<0||jj<0||ii>=this.W||jj>=this.H) return 0;
+          return this.dist[jj*this.W+ii]*this.cell; } };
+      if (simTime===0) warmSettle();   // include text in the pre-settle
+      render();
+    });
+}
+
+/* ── Verlet cloth (identical physics to the editor) ── */
+var C = CFG.cloth, S = CFG.shape;
+var cloth = {
+  cols:0, rows:0, pos:[], prev:[], pinned:[], pinPos:[], constraints:[],
+  _ci:new THREE.Matrix4(), _bi:new THREE.Matrix4(), _ti:new THREE.Matrix4(),
+  _v:new THREE.Vector3(),
+  build:function(){
+    var segs=C.res; this.cols=segs+1; this.rows=segs+1;
+    this.pos=[]; this.prev=[]; this.pinned=[]; this.pinPos=[];
+    for (var j=0;j<this.rows;j++) for (var i=0;i<this.cols;i++){
+      var p=new THREE.Vector3((i/(this.cols-1)-0.5)*C.w,(0.5-j/(this.rows-1))*C.h,0);
+      this.pos.push(p); this.prev.push(p.clone());
+      this.pinned.push(j===0); this.pinPos.push(p.clone());
+    }
+    this.constraints=[];
+    var idx=function(cols,i,j){return j*cols+i;}, self=this;
+    var add=function(a,b){ self.constraints.push([a,b,self.pos[a].distanceTo(self.pos[b])]); };
+    for (j=0;j<this.rows;j++) for (i=0;i<this.cols;i++){
+      if (i<this.cols-1) add(idx(this.cols,i,j),idx(this.cols,i+1,j));
+      if (j<this.rows-1) add(idx(this.cols,i,j),idx(this.cols,i,j+1));
+      if (i<this.cols-1&&j<this.rows-1){ add(idx(this.cols,i,j),idx(this.cols,i+1,j+1));
+        add(idx(this.cols,i+1,j),idx(this.cols,i,j+1)); }
+      if (i<this.cols-2) add(idx(this.cols,i,j),idx(this.cols,i+2,j));
+      if (j<this.rows-2) add(idx(this.cols,i,j),idx(this.cols,i,j+2));
+    }
+  },
+  step:function(dt,time){
+    var n=this.pos.length;
+    var qInv=clothGroup.quaternion.clone().invert();
+    var s=Math.max(CFG.clothT.s,1e-4);
+    var g=new THREE.Vector3(0,-C.gravity,0).applyQuaternion(qInv).divideScalar(s);
+    var wind=new THREE.Vector3(Math.sin(time*0.6)*0.35,0,1).applyQuaternion(qInv)
+      .multiplyScalar(C.wind/s);
+    var keep=1-C.damping, dt2=dt*dt, tmp=this._v, k, p, pp;
+    for (k=0;k<n;k++){
+      if (this.pinned[k]&&C.pinTop) continue;
+      p=this.pos[k]; pp=this.prev[k];
+      tmp.subVectors(p,pp).multiplyScalar(keep);
+      pp.copy(p); p.add(tmp);
+      p.x+=(g.x+wind.x)*dt2; p.y+=(g.y+wind.y)*dt2; p.z+=(g.z+wind.z)*dt2;
+      if (C.turbulence>0){ var t3=time*1.7;
+        p.x+=Math.sin(p.y*3.1+t3)*C.turbulence*0.15*dt2*60;
+        p.z+=Math.cos(p.x*2.7+t3*1.31)*C.turbulence*0.35*dt2*60; }
+    }
+    var kc=C.stiffness*0.5, it, c, cn, pa, pb, dd, diff, pinA, pinB;
+    for (it=0;it<5;it++){
+      for (c=0;c<this.constraints.length;c++){
+        cn=this.constraints[c]; pa=this.pos[cn[0]]; pb=this.pos[cn[1]];
+        tmp.subVectors(pb,pa); dd=tmp.length(); if (dd===0) continue;
+        diff=(dd-cn[2])/dd*kc;
+        pinA=this.pinned[cn[0]]&&C.pinTop; pinB=this.pinned[cn[1]]&&C.pinTop;
+        if (!pinA&&!pinB){ pa.addScaledVector(tmp,diff); pb.addScaledVector(tmp,-diff); }
+        else if (pinA&&!pinB) pb.addScaledVector(tmp,-diff*2);
+        else if (!pinA&&pinB) pa.addScaledVector(tmp,diff*2);
+      }
+      this.collideShape();
+      this.collideText();
+      if (C.pinTop) for (k=0;k<n;k++) if (this.pinned[k]) this.pos[k].copy(this.pinPos[k]);
+    }
+  },
+  collideShape:function(){
+    var cm=clothGroup.matrixWorld, ci=this._ci.copy(cm).invert();
+    var bm=cubeGroup.matrixWorld, bi=this._bi.copy(bm).invert();
+    var HALF=0.5, SKIN=0.02, v=this._v, kind=S.kind, i, p, hit;
+    for (i=0;i<this.pos.length;i++){
+      p=this.pos[i];
+      v.copy(p).applyMatrix4(cm).applyMatrix4(bi);
+      hit=false;
+      if (kind==='box'){
+        if (Math.abs(v.x)<HALF&&Math.abs(v.y)<HALF&&Math.abs(v.z)<HALF){
+          var dx=HALF-Math.abs(v.x), dy=HALF-Math.abs(v.y), dz=HALF-Math.abs(v.z);
+          if (dx<=dy&&dx<=dz) v.x=(v.x<0?-1:1)*(HALF+SKIN);
+          else if (dy<=dx&&dy<=dz) v.y=(v.y<0?-1:1)*(HALF+SKIN);
+          else v.z=(v.z<0?-1:1)*(HALF+SKIN);
+          hit=true; }
+      } else if (kind==='sphere'){
+        var dl=v.length();
+        if (dl<HALF){ if (dl<1e-6) v.set(0,HALF+SKIN,0);
+          else v.multiplyScalar((HALF+SKIN)/dl); hit=true; }
+      } else if (kind==='cylinder'){
+        var r=Math.sqrt(v.x*v.x+v.z*v.z);
+        if (r<HALF&&Math.abs(v.y)<HALF){
+          if (HALF-Math.abs(v.y)<=HALF-r) v.y=(v.y<0?-1:1)*(HALF+SKIN);
+          else { var sc=(HALF+SKIN)/Math.max(r,1e-6); v.x*=sc; v.z*=sc; }
+          hit=true; }
+      } else if (kind==='cone'){
+        if (v.y>-HALF&&v.y<HALF){
+          var R=(HALF-v.y)*0.5, rr=Math.sqrt(v.x*v.x+v.z*v.z);
+          if (rr<R){
+            if (v.y+HALF<=(R-rr)*0.894||rr<1e-6) v.y=-(HALF+SKIN);
+            else { var s2=(R+SKIN)/rr; v.x*=s2; v.z*=s2; }
+            hit=true; } }
+      }
+      if (hit){ v.applyMatrix4(bm).applyMatrix4(ci); p.lerp(v,S.softness); }
+    }
+  },
+  collideText:function(){
+    if (!textSDF) return;
+    var cm=clothGroup.matrixWorld, ci=this._ci.copy(cm).invert();
+    var tm=textGroup.matrixWorld, ti=this._ti.copy(tm).invert();
+    var SD=textSDF, SKIN=0.02, v=this._v, i, p, d, zPen;
+    for (i=0;i<this.pos.length;i++){
+      p=this.pos[i];
+      v.copy(p).applyMatrix4(cm).applyMatrix4(ti);
+      if (Math.abs(v.z)>=SD.hd||Math.abs(v.x)>=SD.hx||Math.abs(v.y)>=SD.hy) continue;
+      d=SD.at(v.x,v.y); if (d<=0) continue;
+      zPen=SD.hd-Math.abs(v.z);
+      if (zPen<=d) v.z=(v.z<0?-1:1)*(SD.hd+SKIN);
+      else {
+        var e=SD.cell;
+        var gx=SD.at(v.x+e,v.y)-SD.at(v.x-e,v.y);
+        var gy=SD.at(v.x,v.y+e)-SD.at(v.x,v.y-e);
+        var gl=Math.sqrt(gx*gx+gy*gy);
+        if (gl<1e-6) v.z=(v.z<0?-1:1)*(SD.hd+SKIN);
+        else { gx/=gl; gy/=gl; v.x-=gx*(d+SKIN); v.y-=gy*(d+SKIN); }
+      }
+      v.applyMatrix4(tm).applyMatrix4(ci);
+      p.lerp(v,TXT.softness);
+    }
+  },
+  sample:function(u,v,out){
+    var x=u*(this.cols-1), y=v*(this.rows-1);
+    var i0=Math.min(Math.floor(x),this.cols-2), j0=Math.min(Math.floor(y),this.rows-2);
+    var fx=x-i0, fy=y-j0;
+    var a=this.pos[j0*this.cols+i0], b=this.pos[j0*this.cols+i0+1];
+    var c=this.pos[(j0+1)*this.cols+i0], d=this.pos[(j0+1)*this.cols+i0+1];
+    out.set(
+      (a.x*(1-fx)+b.x*fx)*(1-fy)+(c.x*(1-fx)+d.x*fx)*fy,
+      (a.y*(1-fx)+b.y*fx)*(1-fy)+(c.y*(1-fx)+d.y*fx)*fy,
+      (a.z*(1-fx)+b.z*fx)*(1-fy)+(c.z*(1-fx)+d.z*fx)*fy);
+    return out;
+  }
+};
+
+/* ── glyph placement (same math as the editor) ── */
+var _sp=new THREE.Vector3(), _u1=new THREE.Vector3(), _u0=new THREE.Vector3();
+var _v1=new THREE.Vector3(), _v0=new THREE.Vector3();
+var _t=new THREE.Vector3(), _b=new THREE.Vector3(), _n=new THREE.Vector3();
+var _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _qs=new THREE.Quaternion();
+var _s=new THREE.Vector3(), _z=new THREE.Vector3(0,0,1), _r=new THREE.Matrix4();
+function updatePattern(){
+  var e=0.5/Math.max(D,2), k=0, i, j, u, v;
+  for (j=0;j<D;j++){ v=D===1?0.5:j/(D-1);
+    for (i=0;i<D;i++){ u=D===1?0.5:i/(D-1);
+      cloth.sample(u,v,_sp);
+      cloth.sample(Math.min(u+e,1),v,_u1); cloth.sample(Math.max(u-e,0),v,_u0);
+      cloth.sample(u,Math.min(v+e,1),_v1); cloth.sample(u,Math.max(v-e,0),_v0);
+      _t.subVectors(_u1,_u0).normalize();
+      _n.crossVectors(_t,_v1.sub(_v0));
+      if (_n.lengthSq()<1e-10) _n.set(0,0,1); else _n.normalize().negate();
+      _b.crossVectors(_n,_t).normalize();
+      _r.makeBasis(_t,_b,_n);
+      _q.setFromRotationMatrix(_r);
+      if (PT.rotRandom>0){ _qs.setFromAxisAngle(_z,spin[k]*PT.rotRandom); _q.multiply(_qs); }
+      _s.setScalar(PT.size);
+      _m.compose(_sp,_q,_s);
+      pattern.setMatrixAt(k++,_m);
+    } }
+  pattern.instanceMatrix.needsUpdate=true;
+}
+
+/* ── loop: starts when visible, pauses off-screen, click replays ── */
+var playing=false, last=0, acc=0, simTime=0, FIXED=1/60;
+cloth.build();
+/* with an animation, pre-settle the cloth around the START keyframe and
+   freeze it, so the frame is perfectly STILL until the tween begins */
+function warmSettle(){
+  if (!ANIM) return;
+  tweenCube(0);
+  for (var i=0;i<240;i++) cloth.step(FIXED, -(240-i)*FIXED);
+  for (i=0;i<cloth.pos.length;i++) cloth.prev[i].copy(cloth.pos[i]);  // kill velocity
+}
+warmSettle();
+
+/* text fade: with an animation the text (+ container) is hidden until
+   the collider reaches the end keyframe, then fades in over ~0.8s */
+var textFade = ANIM ? 0 : 1;
+function applyTextFade(){
+  var show = TXT.visible && textFade > 0.01;
+  if (textMeshE){ textMatE.opacity = TXT.opacity*textFade; textMeshE.visible = show; }
+  if (contMeshE){ contMatE.opacity = TXT.cont.opacity*textFade; contMeshE.visible = show; }
+}
+function render(){ applyTextFade(); updatePattern(); renderer.render(scene,cam); }
+
+/* after the tween ends, the collider gently follows the cursor —
+   a soft parallax in the camera plane, easing back when the
+   pointer leaves */
+var mouse={x:0,y:0,active:false};
+var mOff=new THREE.Vector3(), mTarget=new THREE.Vector3();
+host.addEventListener('pointermove', function(e){
+  var r=host.getBoundingClientRect();
+  mouse.x= ((e.clientX-r.left)/r.width)*2-1;
+  mouse.y=-(((e.clientY-r.top)/r.height)*2-1);
+  mouse.active=true;
+});
+host.addEventListener('pointerleave', function(){ mouse.active=false; });
+function mouseFollow(){
+  var K=0.25;   // gentle: max ~0.25 world units of drift
+  if (mouse.active){
+    var e=cam.matrixWorld.elements;   // camera right (e0..2) + up (e4..6)
+    mTarget.set(e[0]*mouse.x+e[4]*mouse.y,
+                e[1]*mouse.x+e[5]*mouse.y,
+                e[2]*mouse.x+e[6]*mouse.y).multiplyScalar(K);
+  } else mTarget.set(0,0,0);
+  mOff.lerp(mTarget, 0.04);           // soft ease toward the cursor
+  var B=ANIM.b;
+  cubeGroup.position.set(B.px+mOff.x, B.py+mOff.y, B.pz+mOff.z);
+  cubeGroup.rotation.set(d2r(B.rx), d2r(B.ry), d2r(B.rz));
+  cubeGroup.scale.set(B.sx, B.sy, B.sz);
+  cubeGroup.updateMatrixWorld(true);
+}
+
+function frame(now){
+  requestAnimationFrame(frame);
+  if (!playing){ last=now; return; }
+  var dtMs=Math.min(now-last,50); last=now; acc+=dtMs/1000;
+  while (acc>=FIXED){
+    simTime+=FIXED;
+    if (ANIM){
+      var t = Math.min(simTime/Math.max(ANIM.dur,0.1), 1);
+      if (t < 1) tweenCube((EASES[ANIM.ease]||EASES.easeInOut)(t));
+      else {
+        mouseFollow();
+        textFade = Math.min(1, textFade + FIXED/0.8);   // soft text fade-in
+      }
+    }
+    cloth.step(FIXED,simTime);
+    acc-=FIXED;
+  }
+  render();
+}
+requestAnimationFrame(frame);
+resize();
+if (window.IntersectionObserver){
+  new IntersectionObserver(function(en){ playing=en[0].isIntersecting; },
+    { threshold:0.15 }).observe(host);
+} else playing=true;
+host.addEventListener('click', function(){   // replay from the start keyframe
+  cloth.build();
+  simTime = 0;
+  mOff.set(0,0,0);
+  textFade = ANIM ? 0 : 1;
+  warmSettle();
+});
+})();
+<\/script>
+</body>
+</html>`;
+
+/* ════════════════════════════════════════════════════════════════════
+   UI — compact declarative panel builder
+   ════════════════════════════════════════════════════════════════════ */
+const panel = document.getElementById('panel');
+
+/* Every control registers a refresh function against its P key, so
+   section resets and gizmo drags can push values back into the UI. */
+const registry = {};
+function reg(key, fn){ (registry[key] = registry[key] || []).push(fn); }
+function refreshKey(key){ (registry[key] || []).forEach(fn=> fn()); }
+function resetKeys(keys){ keys.forEach(k=>{ P[k] = DEF[k]; refreshKey(k); }); }
+
+function section(title, open, resetFn){
+  const d = document.createElement('details');
+  if (open) d.open = true;
+  const s = document.createElement('summary');
+  const lab = document.createElement('span'); lab.className='sum-label';
+  lab.textContent = title;
+  s.appendChild(lab);
+  if (resetFn){
+    const rb = document.createElement('button');
+    rb.className='sec-reset'; rb.textContent='↺'; rb.title='reset section';
+    rb.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); resetFn(); });
+    s.appendChild(rb);
+  }
+  const body = document.createElement('div');
+  body.className = 'sec-body';
+  d.append(s, body);
+  panel.appendChild(d);
+  return body;
+}
+function slider(parent, label, key, min, max, step, onChange, fmt){
+  const wrap = document.createElement('div'); wrap.className='ctl';
+  const row = document.createElement('div'); row.className='ctl-row';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const val = document.createElement('span'); val.className='val';
+  const show = v => val.textContent = fmt ? fmt(v) : (+v).toFixed(step<0.01?3:step<1?2:0);
+  show(P[key]);
+  const inp = document.createElement('input');
+  inp.type='range'; inp.min=min; inp.max=max; inp.step=step; inp.value=P[key];
+  inp.addEventListener('input', ()=>{ P[key]=+inp.value; show(P[key]); if(onChange) onChange(); });
+  reg(key, ()=>{ inp.value = P[key]; show(P[key]); });
+  row.append(lab, val); wrap.append(row, inp); parent.appendChild(wrap);
+  return inp;
+}
+function toggle(parent, label, key, onChange){
+  const l = document.createElement('label'); l.className='toggle';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const inp = document.createElement('input'); inp.type='checkbox'; inp.checked=P[key];
+  const sw = document.createElement('span'); sw.className='switch';
+  inp.addEventListener('change', ()=>{ P[key]=inp.checked; if(onChange) onChange(); });
+  reg(key, ()=>{ inp.checked = P[key]; });
+  l.append(lab, inp, sw); parent.appendChild(l);
+}
+function button(parent, label, onClick){
+  const b = document.createElement('button'); b.className='panel-btn';
+  b.textContent = label; b.addEventListener('click', onClick);
+  parent.appendChild(b);
+}
+function numberInput(parent, label, key, onChange){
+  const wrap = document.createElement('div'); wrap.className='ctl';
+  const lab = document.createElement('label'); lab.textContent = label;
+  const inp = document.createElement('input'); inp.type='number'; inp.value=P[key];
+  inp.addEventListener('change', ()=>{ P[key]=+inp.value; if(onChange) onChange(); });
+  reg(key, ()=>{ inp.value = P[key]; });
+  wrap.append(lab, inp); parent.appendChild(wrap);
+}
+function segmented(parent, label, key, options, onChange){
+  const wrap = document.createElement('div'); wrap.className='ctl';
+  if (label){ const lab = document.createElement('label'); lab.textContent = label; wrap.appendChild(lab); }
+  const row = document.createElement('div'); row.className='seg';
+  const btns = [];
+  options.forEach(o=>{
+    const b = document.createElement('button'); b.textContent = o.label;
+    b.addEventListener('click', ()=>{ P[key] = o.v; paint(); if(onChange) onChange(); });
+    btns.push([b, o.v]); row.appendChild(b);
+  });
+  function paint(){ btns.forEach(([b,v])=> b.classList.toggle('active', P[key]===v)); }
+  paint(); reg(key, paint);
+  wrap.appendChild(row); parent.appendChild(wrap);
+}
+
+/* Gizmo → P sync: read the dragged object's transform back into the
+   params and refresh the matching sliders. Cloth scale is kept uniform. */
+const r2d = THREE.MathUtils.radToDeg;
+function syncFromGizmo(){
+  if (gizmo.object === clothGroup){
+    const g = clothGroup;
+    P.cpx = g.position.x; P.cpy = g.position.y; P.cpz = g.position.z;
+    P.crx = r2d(g.rotation.x); P.cry = r2d(g.rotation.y); P.crz = r2d(g.rotation.z);
+    const s = g.scale.x; g.scale.setScalar(s); P.cscale = s;
+    ['cpx','cpy','cpz','crx','cry','crz','cscale'].forEach(refreshKey);
+  } else if (gizmo.object === cubeGroup){
+    const g = cubeGroup;
+    P.bx = g.position.x; P.by = g.position.y; P.bz = g.position.z;
+    P.brx = r2d(g.rotation.x); P.bry = r2d(g.rotation.y); P.brz = r2d(g.rotation.z);
+    P.bsx = g.scale.x; P.bsy = g.scale.y; P.bsz = g.scale.z;
+    ['bx','by','bz','brx','bry','brz','bsx','bsy','bsz'].forEach(refreshKey);
+  } else if (gizmo.object === textGroup){
+    const g = textGroup;
+    P.tx = g.position.x; P.ty = g.position.y; P.tz = g.position.z;
+    P.trx = r2d(g.rotation.x); P.try = r2d(g.rotation.y); P.trz = r2d(g.rotation.z);
+    P.tsx = g.scale.x; P.tsy = g.scale.y; P.tsz = g.scale.z;
+    ['tx','ty','tz','trx','try','trz','tsx','tsy','tsz'].forEach(refreshKey);
+  }
+}
+
+/* ── Pattern ── */
+{
+  const KEYS = ['char','density','charSize','charWeight','rotRandom','opacity','color'];
+  const s = section('Pattern', true, ()=>{
+    resetKeys(KEYS);
+    redrawGlyph(); buildPattern();
+    glyphMat.opacity = P.opacity; glyphMat.color.set(P.color);
+  });
+  const ctl = document.createElement('div'); ctl.className='ctl';
+  const lab = document.createElement('label'); lab.textContent='character';
+  const inp = document.createElement('input');
+  inp.type='text'; inp.maxLength=3; inp.value=P.char; inp.spellcheck=false;
+  inp.addEventListener('input', ()=>{ P.char = inp.value || '+'; redrawGlyph(); });
+  reg('char', ()=>{ inp.value = P.char; });
+  ctl.append(lab, inp); s.appendChild(ctl);
+
+  slider(s, 'density', 'density', 8, 110, 1, buildPattern);
+  slider(s, 'size', 'charSize', 0.015, 0.3, 0.001);
+  slider(s, 'weight', 'charWeight', 0, 10, 0.5, redrawGlyph);
+  slider(s, 'rotation randomness', 'rotRandom', 0, 1, 0.01);
+  slider(s, 'opacity', 'opacity', 0.05, 1, 0.01, ()=> glyphMat.opacity = P.opacity);
+
+  const cw = document.createElement('div'); cw.className='ctl';
+  const cl = document.createElement('label'); cl.textContent='colour';
+  const ci = document.createElement('input'); ci.type='color'; ci.value=P.color;
+  ci.addEventListener('input', ()=>{ P.color=ci.value; glyphMat.color.set(ci.value); });
+  reg('color', ()=>{ ci.value = P.color; });
+  cw.append(cl, ci); s.appendChild(cw);
+}
+
+/* ── Cloth ── */
+{
+  const KEYS = ['clothW','clothH','clothRes','stiffness','damping','gravity','wind','turbulence','pinTop'];
+  const s = section('Cloth', false, ()=>{ resetKeys(KEYS); cloth.reset(); });
+  slider(s, 'width', 'clothW', 1, 6, 0.1, ()=> cloth.reset());
+  slider(s, 'height', 'clothH', 1, 6, 0.1, ()=> cloth.reset());
+  slider(s, 'resolution', 'clothRes', 10, 60, 1, ()=> cloth.reset());
+  slider(s, 'stiffness', 'stiffness', 0.1, 1, 0.01);
+  slider(s, 'damping', 'damping', 0, 0.1, 0.001);
+  slider(s, 'gravity', 'gravity', 0, 25, 0.1);
+  slider(s, 'wind', 'wind', 0, 6, 0.05);
+  slider(s, 'turbulence', 'turbulence', 0, 6, 0.05);
+  toggle(s, 'pin top edge', 'pinTop');
+  button(s, 'Reset simulation', ()=> cloth.reset());
+}
+
+const GIZMO_MODES = [
+  {v:'translate', label:'move'}, {v:'rotate', label:'rotate'}, {v:'scale', label:'scale'}
+];
+
+/* ── Cloth transform ── */
+{
+  const KEYS = ['cpx','cpy','cpz','crx','cry','crz','cscale','gizmoCloth'];
+  const s = section('Cloth transform', false, ()=>{
+    resetKeys(KEYS); applyClothTransform(); updateGizmo();
+  });
+  toggle(s, 'show gizmo', 'gizmoCloth', ()=>{
+    if (P.gizmoCloth) exclusiveGizmo('gizmoCloth');
+    updateGizmo();
+  });
+  segmented(s, 'gizmo mode', 'gizmoMode', GIZMO_MODES, ()=> gizmo.setMode(P.gizmoMode));
+  slider(s, 'position x', 'cpx', -3, 3, 0.01, applyClothTransform);
+  slider(s, 'position y', 'cpy', -3, 3, 0.01, applyClothTransform);
+  slider(s, 'position z', 'cpz', -3, 3, 0.01, applyClothTransform);
+  slider(s, 'rotation x', 'crx', -180, 180, 1, applyClothTransform);
+  slider(s, 'rotation y', 'cry', -180, 180, 1, applyClothTransform);
+  slider(s, 'rotation z', 'crz', -180, 180, 1, applyClothTransform);
+  slider(s, 'scale', 'cscale', 0.2, 3, 0.01, applyClothTransform);
+}
+
+/* ── Shape collider ── */
+{
+  const KEYS = ['shape','bx','by','bz','brx','bry','brz','bsx','bsy','bsz','softness','showDebug','gizmoShape'];
+  const s = section('Shape collider', false, ()=>{
+    resetKeys(KEYS); updateShapeDebug(); applyCubeTransform(); updateGizmo();
+  });
+  segmented(s, 'shape', 'shape', [
+    {v:'box', label:'cube'}, {v:'sphere', label:'sphere'},
+    {v:'cylinder', label:'cyl'}, {v:'cone', label:'cone'}
+  ], updateShapeDebug);
+  toggle(s, 'show gizmo', 'gizmoShape', ()=>{
+    if (P.gizmoShape) exclusiveGizmo('gizmoShape');
+    if (P.gizmoShape && !P.showDebug){          // reveal what you're dragging
+      P.showDebug = true; refreshKey('showDebug'); applyCubeTransform();
+    }
+    updateGizmo();
+  });
+  segmented(s, 'gizmo mode', 'gizmoMode', GIZMO_MODES, ()=> gizmo.setMode(P.gizmoMode));
+  slider(s, 'position x', 'bx', -3, 3, 0.01, applyCubeTransform);
+  slider(s, 'position y', 'by', -3, 3, 0.01, applyCubeTransform);
+  slider(s, 'position z', 'bz', -3, 3, 0.01, applyCubeTransform);
+  slider(s, 'rotation x', 'brx', -180, 180, 1, applyCubeTransform);
+  slider(s, 'rotation y', 'bry', -180, 180, 1, applyCubeTransform);
+  slider(s, 'rotation z', 'brz', -180, 180, 1, applyCubeTransform);
+  slider(s, 'scale x', 'bsx', 0.1, 4, 0.01, applyCubeTransform);
+  slider(s, 'scale y', 'bsy', 0.1, 4, 0.01, applyCubeTransform);
+  slider(s, 'scale z', 'bsz', 0.1, 4, 0.01, applyCubeTransform);
+  slider(s, 'collision softness', 'softness', 0.05, 1, 0.01);
+  toggle(s, 'show collider debug', 'showDebug', applyCubeTransform);
+}
+
+/* ── Collider animation ── */
+{
+  const KEYS = ['kfA','kfB','animDur','animEase'];
+  const s = section('Collider animation', false, ()=>{
+    resetKeys(KEYS); previewing = false; applyCubeTransform();
+  });
+  const hint = document.createElement('div'); hint.className='hint';
+  hint.textContent = 'position the collider, capture START — move it again, capture END. The embed animates start → end while the cloth reacts. Preview plays it here.';
+  s.appendChild(hint);
+
+  const status = document.createElement('div'); status.className='hint';
+  const paintStatus = ()=>{
+    status.textContent = 'start: ' + (P.kfA ? 'set ✓' : '—') +
+                         '   ·   end: ' + (P.kfB ? 'set ✓' : '—');
+  };
+  paintStatus();
+  reg('kfA', paintStatus); reg('kfB', paintStatus);
+  s.appendChild(status);
+
+  const g1 = document.createElement('div'); g1.className='grid2'; s.appendChild(g1);
+  button(g1, 'Set start = now', ()=>{ P.kfA = captureKeyframe(); paintStatus(); });
+  button(g1, 'Set end = now',   ()=>{ P.kfB = captureKeyframe(); paintStatus(); });
+  const g2 = document.createElement('div'); g2.className='grid2'; s.appendChild(g2);
+  button(g2, 'Go to start', ()=>{ if (P.kfA) applyKeyframe(P.kfA); });
+  button(g2, 'Go to end',   ()=>{ if (P.kfB) applyKeyframe(P.kfB); });
+
+  slider(s, 'duration s', 'animDur', 0.5, 10, 0.1);
+  segmented(s, 'easing', 'animEase', [
+    {v:'easeInOut', label:'ease in-out'}, {v:'easeOut', label:'ease out'},
+    {v:'linear', label:'linear'}
+  ]);
+  button(s, '▶ Preview animation', playPreview);
+  button(s, 'Clear keyframes', ()=>{
+    P.kfA = null; P.kfB = null; paintStatus();
+    previewing = false; applyCubeTransform();
+  });
+}
+
+/* ── Text element ── */
+{
+  const KEYS = ['text','tdepth','tvisible','tcolor','topacity','tweight',
+    'tcontainer','tpad','tcorner','tcontainerColor','tcontainerOpacity',
+    'tx','ty','tz','trx','try','trz','tsx','tsy','tsz','tsoftness','gizmoText'];
+  const s = section('Text element', false, ()=>{
+    resetKeys(KEYS);
+    textMat.color.set(P.tcolor); textMat.opacity = P.topacity;
+    containerMat.color.set(P.tcontainerColor); containerMat.opacity = P.tcontainerOpacity;
+    loadTextFont(); applyTextTransform(); updateGizmo();
+  });
+  const ctl = document.createElement('div'); ctl.className='ctl';
+  const lab = document.createElement('label'); lab.textContent='text · type to add';
+  const inp = document.createElement('input');
+  inp.type='text'; inp.maxLength=24; inp.value=P.text; inp.spellcheck=false;
+  inp.addEventListener('input', ()=>{ P.text = inp.value; rebuildText(); });
+  reg('text', ()=>{ inp.value = P.text; });
+  ctl.append(lab, inp); s.appendChild(ctl);
+
+  segmented(s, 'font weight', 'tweight', [
+    {v:'regular', label:'regular'}, {v:'bold', label:'bold'}
+  ], loadTextFont);
+  slider(s, 'extrude depth', 'tdepth', 0.05, 1, 0.01, rebuildText);
+  toggle(s, 'visible', 'tvisible', ()=>{
+    textBaseVisible = P.tvisible && !!(P.text||'').trim() && !!font;
+  });
+
+  const cw = document.createElement('div'); cw.className='ctl';
+  const cl = document.createElement('label'); cl.textContent='colour';
+  const ci = document.createElement('input'); ci.type='color'; ci.value=P.tcolor;
+  ci.addEventListener('input', ()=>{ P.tcolor=ci.value; textMat.color.set(ci.value); });
+  reg('tcolor', ()=>{ ci.value = P.tcolor; });
+  cw.append(cl, ci); s.appendChild(cw);
+  slider(s, 'opacity', 'topacity', 0.05, 1, 0.01, ()=> textMat.opacity = P.topacity);
+
+  toggle(s, 'container', 'tcontainer', rebuildText);
+  slider(s, 'container size', 'tpad', 0.05, 1, 0.01, rebuildText);
+  slider(s, 'corner radius', 'tcorner', 0, 0.5, 0.01, rebuildText);
+  const kw = document.createElement('div'); kw.className='ctl';
+  const kl = document.createElement('label'); kl.textContent='container fill';
+  const ki = document.createElement('input'); ki.type='color'; ki.value=P.tcontainerColor;
+  ki.addEventListener('input', ()=>{ P.tcontainerColor=ki.value; containerMat.color.set(ki.value); });
+  reg('tcontainerColor', ()=>{ ki.value = P.tcontainerColor; });
+  kw.append(kl, ki); s.appendChild(kw);
+  slider(s, 'container opacity', 'tcontainerOpacity', 0.05, 1, 0.01,
+    ()=> containerMat.opacity = P.tcontainerOpacity);
+
+  toggle(s, 'show gizmo', 'gizmoText', ()=>{
+    if (P.gizmoText) exclusiveGizmo('gizmoText');
+    updateGizmo();
+  });
+  segmented(s, 'gizmo mode', 'gizmoMode', GIZMO_MODES, ()=> gizmo.setMode(P.gizmoMode));
+  slider(s, 'position x', 'tx', -3, 3, 0.01, applyTextTransform);
+  slider(s, 'position y', 'ty', -3, 3, 0.01, applyTextTransform);
+  slider(s, 'position z', 'tz', -3, 3, 0.01, applyTextTransform);
+  slider(s, 'rotation x', 'trx', -180, 180, 1, applyTextTransform);
+  slider(s, 'rotation y', 'try', -180, 180, 1, applyTextTransform);
+  slider(s, 'rotation z', 'trz', -180, 180, 1, applyTextTransform);
+  slider(s, 'scale x', 'tsx', 0.1, 4, 0.01, applyTextTransform);
+  slider(s, 'scale y', 'tsy', 0.1, 4, 0.01, applyTextTransform);
+  slider(s, 'scale z', 'tsz', 0.1, 4, 0.01, applyTextTransform);
+  slider(s, 'collision softness', 'tsoftness', 0.05, 1, 0.01);
+}
+
+/* ── Camera ── */
+{
+  const s = section('Camera', false, ()=>{
+    if (P._ortho){ P._ortho = false; refreshKey('_ortho'); switchCamera(false); }
+    resetCamera();
+  });
+  const hint = document.createElement('div'); hint.className='hint';
+  hint.textContent = 'drag to orbit · scroll to zoom · right-drag / two-finger to pan';
+  s.appendChild(hint);
+
+  // preset views: keep current distance, move around the orbit target
+  const VIEWS = {
+    front:[0,0,1], back:[0,0,-1], left:[-1,0,0], right:[1,0,0],
+    top:[0,1,0.001], bottom:[0,-1,0.001], iso:[1,0.75,1]
+  };
+  function setView(name){
+    const dir = new THREE.Vector3(...VIEWS[name]).normalize();
+    const d = camera.position.distanceTo(controls.target) || 5;
+    camera.position.copy(controls.target).addScaledVector(dir, d);
+    controls.update();
+  }
+  const vw = document.createElement('div'); vw.className='ctl';
+  const vl = document.createElement('label'); vl.textContent='preset views';
+  vw.appendChild(vl);
+  [['front','back','left','right'], ['top','bottom','iso']].forEach(names=>{
+    const row = document.createElement('div'); row.className='seg';
+    names.forEach(n=>{
+      const b = document.createElement('button'); b.textContent = n;
+      b.addEventListener('click', ()=> setView(n));
+      row.appendChild(b);
+    });
+    vw.appendChild(row);
+  });
+  vw.querySelectorAll('.seg')[1].style.marginTop = '4px';
+  s.appendChild(vw);
+
+  toggle(s, 'orthographic', '_ortho', ()=> switchCamera(P._ortho));
+  button(s, 'Reset camera', resetCamera);
+}
+
+/* ── Export ── */
+{
+  const KEYS = ['exW','exH','exPR','exTransparent','exCrop','exPad','exDebug'];
+  const s = section('Export', false, ()=> resetKeys(KEYS));
+  const g = document.createElement('div'); g.className='grid2'; s.appendChild(g);
+  numberInput(g, 'width px', 'exW');
+  numberInput(g, 'height px', 'exH');
+  slider(s, 'pixel ratio', 'exPR', 1, 3, 0.5);
+  toggle(s, 'transparent background', 'exTransparent');
+  toggle(s, 'crop to pattern bounds', 'exCrop');
+  slider(s, 'padding px', 'exPad', 0, 400, 5);
+  toggle(s, 'export debug objects', 'exDebug');
+  button(s, 'Export PNG', exportPNG);
+  button(s, 'Export SVG', exportSVG);
+  button(s, 'Export embed', exportEmbed);
+  button(s, 'Preview embed ↗', previewEmbed);
+  const hint = document.createElement('div'); hint.className='hint';
+  hint.textContent = 'pixel ratio multiplies PNG resolution only — framing never changes. SVG is vector. Embed is a live animated HTML snippet of the current state, for landing pages.';
+  s.appendChild(hint);
+}
+
+document.getElementById('export-btn').addEventListener('click', exportPNG);
+
+/* save the current parameter set + camera as the new defaults —
+   loaded on every future visit; section resets return to these */
+document.getElementById('save-defaults-btn').addEventListener('click', ()=>{
+  const btn = document.getElementById('save-defaults-btn');
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      p: P,
+      cam: { pos: camera.position.toArray(), target: controls.target.toArray() }
+    }));
+    Object.assign(DEF, P);           // resets now target the saved state
+    btn.textContent = 'Saved ✓';
+  } catch(e){
+    btn.textContent = 'Save failed';
+  }
+  setTimeout(()=>{ btn.textContent = 'Save defaults'; }, 1500);
+});
+
+/* ════════════════════════════════════════════════════════════════════
+   BOOT + LOOP — fixed timestep sim, rAF render
+   ════════════════════════════════════════════════════════════════════ */
+redrawGlyph();
+applyClothTransform();
+applyCubeTransform();
+applyTextTransform();
+updateShapeDebug();
+updateGizmo();
+if (P._ortho) switchCamera(true);   // saved defaults may prefer ortho
+cloth.build();
+buildPattern();
+
+let last = performance.now();
+let acc = 0;
+const FIXED = 1/60;
+
+function loop(now){
+  requestAnimationFrame(loop);
+  const dtMs = Math.min(now - last, 50);   // clamp long frames
+  last = now;
+  acc += dtMs/1000;
+  while (acc >= FIXED){
+    if (previewing){          // drive the collider along the keyframe tween
+      previewT += FIXED;
+      const t = Math.min(previewT / Math.max(P.animDur, 0.1), 1);
+      tweenCube(EASES[P.animEase](t));
+      if (t >= 1) previewing = false;   // rests at the end keyframe
+    }
+    // soft text fade-in, starting once the tween has finished
+    if (textFade < 1 && !previewing) textFade = Math.min(1, textFade + FIXED/0.8);
+    cloth.step(FIXED, now/1000);
+    acc -= FIXED;
+  }
+  // apply fade to the text element (visibility gate avoids an invisible
+  // depth-writing occluder while fully faded out)
+  textMat.opacity = P.topacity * textFade;
+  containerMat.opacity = P.tcontainerOpacity * textFade;
+  const showText = textBaseVisible && textFade > 0.01;
+  textMesh.visible = showText;
+  if (containerMesh) containerMesh.visible = showText;
+  updatePattern();
+  controls.update();
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
