@@ -1503,13 +1503,52 @@ host.addEventListener('pointerleave', function(){
   mouse.active=false; pointerPx.x=-1; pointerPx.y=-1;
   host.style.cursor='default';
 });
+/* gyroscope: on touch devices (phone/tablet), device tilt feeds the
+   same gentle follow as the cursor. The baseline slowly re-centres so
+   any holding posture becomes neutral; only tilting away from it
+   moves the cube. iOS needs a one-time permission, requested on the
+   first tap. Tilting also counts as activity, so it wakes the sim. */
+var gyro = { on:false, x:0, y:0, baseB:null, baseG:null };
+function handleOrient(ev){
+  if (ev.beta == null || ev.gamma == null) return;
+  if (gyro.baseB === null){ gyro.baseB = ev.beta; gyro.baseG = ev.gamma; }
+  gyro.baseB += (ev.beta  - gyro.baseB) * 0.005;   // slow re-centre
+  gyro.baseG += (ev.gamma - gyro.baseG) * 0.005;
+  var nx = Math.max(-1, Math.min(1, (ev.gamma - gyro.baseG) / 25));
+  var ny = Math.max(-1, Math.min(1, (ev.beta  - gyro.baseB) / 25));
+  if (Math.abs(nx - gyro.x) > 0.02 || Math.abs(ny - gyro.y) > 0.02)
+    lastActive = performance.now();                // tilt wakes the sim
+  gyro.x = nx; gyro.y = ny;
+  gyro.on = true;
+}
+if (window.matchMedia && matchMedia('(pointer: coarse)').matches &&
+    window.DeviceOrientationEvent){
+  if (typeof DeviceOrientationEvent.requestPermission === 'function'){
+    var askGyro = function(){
+      DeviceOrientationEvent.requestPermission().then(function(s){
+        if (s === 'granted')
+          window.addEventListener('deviceorientation', handleOrient);
+      }).catch(function(){});
+      window.removeEventListener('pointerdown', askGyro);
+    };
+    window.addEventListener('pointerdown', askGyro);
+  } else {
+    window.addEventListener('deviceorientation', handleOrient);
+  }
+}
+
 function mouseFollow(){
   var K=STYLE.followK;
-  if (mouse.active){
+  var tx=0, ty=0;
+  if (mouse.active){ tx += mouse.x; ty += mouse.y; }
+  if (gyro.on){ tx += gyro.x; ty += gyro.y; }     // additive, same gentleness
+  tx = Math.max(-1, Math.min(1, tx));
+  ty = Math.max(-1, Math.min(1, ty));
+  if (tx !== 0 || ty !== 0){
     var e=cam.matrixWorld.elements;
-    mTarget.set(e[0]*mouse.x+e[4]*mouse.y,
-                e[1]*mouse.x+e[5]*mouse.y,
-                e[2]*mouse.x+e[6]*mouse.y).multiplyScalar(K);
+    mTarget.set(e[0]*tx+e[4]*ty,
+                e[1]*tx+e[5]*ty,
+                e[2]*tx+e[6]*ty).multiplyScalar(K);
   } else mTarget.set(0,0,0);
   mOff.lerp(mTarget, 0.04);
   var B=ANIM.b;
