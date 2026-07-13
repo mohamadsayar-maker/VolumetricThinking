@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="build" content="20260713-1436">
-<!-- BUILD:20260713-1436 -->
+<meta name="build" content="20260713-1503">
+<!-- BUILD:20260713-1503 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volumetric Thinking, the book</title>
@@ -734,7 +734,7 @@ footer .brand{font-size:16px}
   </div>
   <div class="colophon">
     Mo Sayyar · volthinking.com<br>
-    © 2026 Mo Sayyar. All rights reserved. · build 20260713-1436
+    © 2026 Mo Sayyar. All rights reserved. · build 20260713-1503
   </div>
 </footer>
 
@@ -1518,10 +1518,10 @@ function handleOrient(ev){
   gyro.events++;
   if (ev.beta == null || ev.gamma == null) return;
   if (gyro.baseB === null){ gyro.baseB = ev.beta; gyro.baseG = ev.gamma; }
-  gyro.baseB += (ev.beta  - gyro.baseB) * 0.002;   // slow re-centre (~8s)
-  gyro.baseG += (ev.gamma - gyro.baseG) * 0.002;
-  var nx = Math.max(-1, Math.min(1, (ev.gamma - gyro.baseG) / 22));
-  var ny = Math.max(-1, Math.min(1, (ev.beta  - gyro.baseB) / 22));
+  gyro.baseB += (ev.beta  - gyro.baseB) * 0.0012;  // slower re-centre (~14s)
+  gyro.baseG += (ev.gamma - gyro.baseG) * 0.0012;
+  var nx = Math.max(-1, Math.min(1,  (ev.gamma - gyro.baseG) / 15));
+  var ny = Math.max(-1, Math.min(1, -(ev.beta  - gyro.baseB) / 15));  // flipped
   if (Math.abs(nx - gyro.x) > 0.01 || Math.abs(ny - gyro.y) > 0.01)
     lastActive = performance.now();                // tilt wakes the sim
   gyro.x = nx; gyro.y = ny;
@@ -1596,7 +1596,7 @@ function mouseFollow(){
   var K=STYLE.followK;
   var tx=0, ty=0;
   if (mouse.active){ tx += mouse.x; ty += mouse.y; }
-  if (gyro.on){ tx += gyro.x; ty += gyro.y; }     // additive, same gentleness
+  if (gyro.on){ tx += gyro.x * 1.5; ty += gyro.y * 1.5; }  // gyro gain, more visible
   tx = Math.max(-1, Math.min(1, tx));
   ty = Math.max(-1, Math.min(1, ty));
   if (tx !== 0 || ty !== 0){
