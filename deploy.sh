@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Push the landing page to GitHub Pages. Usage:  ./deploy.sh "what changed"
+# Push the landing page to GitHub Pages.  Usage:  ./deploy.sh "what changed"
 set -e
 cd "$(dirname "$0")"
 REMOTE="https://github.com/mohamadsayar-maker/VolumetricThinking.git"
@@ -11,15 +11,19 @@ if [ ! -d .git ]; then
 fi
 git remote set-url origin "$REMOTE"
 
+# self-heal: drop the accidental nested repo folder if it reappears
+if [ -e VolumetricThinking ]; then
+  git rm -r --cached VolumetricThinking 2>/dev/null || true
+  rm -rf VolumetricThinking
+fi
+
 git add -A
-git commit -m "$MSG" || { echo "Nothing new to commit."; }
+git commit -m "$MSG" || echo "Nothing new to commit."
 git branch -M main
 
-# first push may need to reconcile an existing README commit on GitHub
-if ! git push -u origin main 2>/dev/null; then
-  echo "Reconciling with remote…"
-  git pull --rebase origin main
-  git push -u origin main
-fi
-echo "Done. Live in ~1-2 min at:"
+# this folder is the single source of truth, so overwrite the remote
+# rather than merging (avoids conflict markers). Safe for a solo repo.
+git push --force-with-lease origin main || git push --force origin main
+
+echo "Pushed. Live in ~1-2 min at:"
 echo "https://mohamadsayar-maker.github.io/VolumetricThinking/"

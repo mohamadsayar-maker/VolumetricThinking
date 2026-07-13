@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="build" content="20260713-1338">
-<!-- BUILD:20260713-1338 -->
+<meta name="build" content="20260713-1436">
+<!-- BUILD:20260713-1436 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volumetric Thinking, the book</title>
@@ -734,7 +734,7 @@ footer .brand{font-size:16px}
   </div>
   <div class="colophon">
     Mo Sayyar · volthinking.com<br>
-    © 2026 Mo Sayyar. All rights reserved. · build 20260713-1338
+    © 2026 Mo Sayyar. All rights reserved. · build 20260713-1436
   </div>
 </footer>
 
@@ -1510,7 +1510,7 @@ host.addEventListener('pointerleave', function(){
    posture becomes neutral; only tilting away from it moves the cube.
    Tilting counts as activity, so it wakes the sim.
    iOS 13+ requires an explicit permission granted from a real tap, so
-   a small "Enable motion" button appears until motion is allowed.
+   permission is requested on the first tap anywhere on the page.
    Load the page with ?debug to see a live sensor readout. */
 var gyro = { on:false, x:0, y:0, baseB:null, baseG:null, events:0 };
 var DEBUG = /[?&]debug/.test(location.search);
@@ -1534,8 +1534,10 @@ var needsPerm = window.DeviceOrientationEvent &&
 
 function startGyro(){
   window.addEventListener('deviceorientation', handleOrient);
-  var b = document.getElementById('motion-btn');
-  if (b) b.remove();
+  if (typeof armGyro === 'function'){
+    document.removeEventListener('touchend', armGyro);
+    document.removeEventListener('click', armGyro);
+  }
 }
 function requestGyro(){
   if (!needsPerm){ startGyro(); return; }
@@ -1547,19 +1549,15 @@ function requestGyro(){
   });
 }
 
+var armGyro;
 if (isTouch && window.DeviceOrientationEvent){
   if (needsPerm){
-    /* explicit, reliable permission button (iOS) */
-    var mb = document.createElement('button');
-    mb.id = 'motion-btn';
-    mb.textContent = 'Enable motion';
-    mb.style.cssText =
-      'position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:45;'+
-      'font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.08em;'+
-      'background:var(--ink);color:var(--paper);border:none;border-radius:999px;'+
-      'padding:11px 20px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.2)';
-    mb.addEventListener('click', function(e){ e.stopPropagation(); requestGyro(); });
-    document.body.appendChild(mb);
+    /* iOS needs a user gesture to grant motion access, but not a
+       dedicated button: request on the visitor's first tap anywhere,
+       and keep listening until granted so a mistap can retry. */
+    armGyro = function(){ requestGyro(); };
+    document.addEventListener('touchend', armGyro, { passive:true });
+    document.addEventListener('click', armGyro);
   } else {
     startGyro();                     /* Android: no permission needed */
   }
