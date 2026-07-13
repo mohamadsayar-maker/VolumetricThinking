@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="build" content="20260713-1255">
-<!-- BUILD:20260713-1255 -->
+<meta name="build" content="20260713-1338">
+<!-- BUILD:20260713-1338 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volumetric Thinking, the book</title>
@@ -734,7 +734,7 @@ footer .brand{font-size:16px}
   </div>
   <div class="colophon">
     Mo Sayyar · volthinking.com<br>
-    © 2026 Mo Sayyar. All rights reserved. · build 20260713-1255
+    © 2026 Mo Sayyar. All rights reserved. · build 20260713-1338
   </div>
 </footer>
 
@@ -1505,38 +1505,93 @@ host.addEventListener('pointerleave', function(){
   mouse.active=false; pointerPx.x=-1; pointerPx.y=-1;
   host.style.cursor='default';
 });
-/* gyroscope: on touch devices (phone/tablet), device tilt feeds the
-   same gentle follow as the cursor. The baseline slowly re-centres so
-   any holding posture becomes neutral; only tilting away from it
-   moves the cube. iOS needs a one-time permission, requested on the
-   first tap. Tilting also counts as activity, so it wakes the sim. */
-var gyro = { on:false, x:0, y:0, baseB:null, baseG:null };
+/* gyroscope: on touch devices, device tilt feeds the same gentle
+   follow as the cursor. The baseline slowly re-centres so any holding
+   posture becomes neutral; only tilting away from it moves the cube.
+   Tilting counts as activity, so it wakes the sim.
+   iOS 13+ requires an explicit permission granted from a real tap, so
+   a small "Enable motion" button appears until motion is allowed.
+   Load the page with ?debug to see a live sensor readout. */
+var gyro = { on:false, x:0, y:0, baseB:null, baseG:null, events:0 };
+var DEBUG = /[?&]debug/.test(location.search);
 function handleOrient(ev){
+  gyro.events++;
   if (ev.beta == null || ev.gamma == null) return;
   if (gyro.baseB === null){ gyro.baseB = ev.beta; gyro.baseG = ev.gamma; }
-  gyro.baseB += (ev.beta  - gyro.baseB) * 0.005;   // slow re-centre
-  gyro.baseG += (ev.gamma - gyro.baseG) * 0.005;
-  var nx = Math.max(-1, Math.min(1, (ev.gamma - gyro.baseG) / 25));
-  var ny = Math.max(-1, Math.min(1, (ev.beta  - gyro.baseB) / 25));
-  if (Math.abs(nx - gyro.x) > 0.02 || Math.abs(ny - gyro.y) > 0.02)
+  gyro.baseB += (ev.beta  - gyro.baseB) * 0.002;   // slow re-centre (~8s)
+  gyro.baseG += (ev.gamma - gyro.baseG) * 0.002;
+  var nx = Math.max(-1, Math.min(1, (ev.gamma - gyro.baseG) / 22));
+  var ny = Math.max(-1, Math.min(1, (ev.beta  - gyro.baseB) / 22));
+  if (Math.abs(nx - gyro.x) > 0.01 || Math.abs(ny - gyro.y) > 0.01)
     lastActive = performance.now();                // tilt wakes the sim
   gyro.x = nx; gyro.y = ny;
   gyro.on = true;
 }
-if (window.matchMedia && matchMedia('(pointer: coarse)').matches &&
-    window.DeviceOrientationEvent){
-  if (typeof DeviceOrientationEvent.requestPermission === 'function'){
-    var askGyro = function(){
-      DeviceOrientationEvent.requestPermission().then(function(s){
-        if (s === 'granted')
-          window.addEventListener('deviceorientation', handleOrient);
-      }).catch(function(){});
-      window.removeEventListener('pointerdown', askGyro);
-    };
-    window.addEventListener('pointerdown', askGyro);
+
+var isTouch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+var needsPerm = window.DeviceOrientationEvent &&
+                typeof DeviceOrientationEvent.requestPermission === 'function';
+
+function startGyro(){
+  window.addEventListener('deviceorientation', handleOrient);
+  var b = document.getElementById('motion-btn');
+  if (b) b.remove();
+}
+function requestGyro(){
+  if (!needsPerm){ startGyro(); return; }
+  DeviceOrientationEvent.requestPermission().then(function(s){
+    if (s === 'granted') startGyro();
+    else if (DEBUG) gyroDbg('permission: ' + s);
+  }).catch(function(err){
+    if (DEBUG) gyroDbg('permission error: ' + err);
+  });
+}
+
+if (isTouch && window.DeviceOrientationEvent){
+  if (needsPerm){
+    /* explicit, reliable permission button (iOS) */
+    var mb = document.createElement('button');
+    mb.id = 'motion-btn';
+    mb.textContent = 'Enable motion';
+    mb.style.cssText =
+      'position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:45;'+
+      'font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.08em;'+
+      'background:var(--ink);color:var(--paper);border:none;border-radius:999px;'+
+      'padding:11px 20px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.2)';
+    mb.addEventListener('click', function(e){ e.stopPropagation(); requestGyro(); });
+    document.body.appendChild(mb);
   } else {
-    window.addEventListener('deviceorientation', handleOrient);
+    startGyro();                     /* Android: no permission needed */
   }
+}
+
+/* optional on-screen diagnostic: open the page with ?debug */
+var gyroDbgEl = null;
+function gyroDbg(msg){
+  if (!DEBUG) return;
+  if (!gyroDbgEl){
+    gyroDbgEl = document.createElement('div');
+    gyroDbgEl.style.cssText =
+      'position:fixed;left:8px;bottom:8px;z-index:60;max-width:70vw;'+
+      'font-family:monospace;font-size:10px;line-height:1.5;'+
+      'background:rgba(0,0,0,.8);color:#0f0;padding:8px 10px;border-radius:8px;'+
+      'white-space:pre-wrap;pointer-events:none';
+    document.body.appendChild(gyroDbgEl);
+  }
+  if (msg){ gyroDbgEl.textContent = msg; return; }
+}
+if (DEBUG){
+  setInterval(function(){
+    if (!gyroDbgEl) gyroDbg('');
+    gyroDbgEl.textContent =
+      'touch: ' + isTouch +
+      '\nDeviceOrientation: ' + (!!window.DeviceOrientationEvent) +
+      '\nneeds permission: ' + needsPerm +
+      '\nevents received: ' + gyro.events +
+      '\ngyro.on: ' + gyro.on +
+      '\nx: ' + gyro.x.toFixed(2) + '  y: ' + gyro.y.toFixed(2) +
+      '\nfollowK: ' + STYLE.followK;
+  }, 250);
 }
 
 function mouseFollow(){
